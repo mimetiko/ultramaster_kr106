@@ -27,6 +27,17 @@ jobs:
       - name: Generate MK-106 Classic GUI
         run: python .github/studio/prepare_mk106.py
 
+      - name: Export editor sources for refinement
+        shell: pwsh
+        run: Compress-Archive -Path Source/PluginEditor.cpp,Source/PluginEditor.h -DestinationPath 'mk106-editor-sources.zip' -Force
+
+      - name: Upload editable editor sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: MK106-Editor-Sources
+          path: mk106-editor-sources.zip
+          retention-days: 7
+
       - name: Configure CMake
         run: cmake -S . -B build -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DKR106_COPY_AFTER_BUILD=OFF
 
