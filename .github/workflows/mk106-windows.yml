@@ -1,0 +1,73 @@
+name: MK-106 Classic - Windows VST3
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [mk106-classic]
+    paths:
+      - '.github/studio/mk106_part*.txt'
+      - '.github/studio/prepare_mk106.py'
+      - '.github/workflows/mk106-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mk106:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout with JUCE and CLAP submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Generate MK-106 Classic GUI
+        run: python .github/studio/prepare_mk106.py
+
+      - name: Export editor sources for refinement
+        shell: pwsh
+        run: Compress-Archive -Path Source/PluginEditor.cpp,Source/PluginEditor.h -DestinationPath 'mk106-editor-sources.zip' -Force
+
+      - name: Upload editable editor sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: MK106-Editor-Sources
+          path: mk106-editor-sources.zip
+          retention-days: 7
+
+      - name: Configure CMake
+        run: cmake -S . -B build -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DKR106_COPY_AFTER_BUILD=OFF
+
+      - name: Build x64 VST3
+        run: cmake --build build --config Release --target KR106_VST3 --parallel 2
+
+      - name: Validate and package MK-106.vst3
+        shell: pwsh
+        run: |
+          $bundle = 'build/KR106_artefacts/Release/VST3/MK-106.vst3'
+          $binary = Join-Path $bundle 'Contents/x86_64-win/MK-106.vst3'
+          if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
+            Get-ChildItem -Path build/KR106_artefacts -File -Recurse | Select-Object FullName,Length | Format-Table
+            throw "Missing compiled binary: $binary"
+          }
+          $size = (Get-Item -LiteralPath $binary).Length
+          Write-Host "Compiled MK-106 x64 VST3 executable: $size bytes"
+          if ($size -lt 1000000) { throw "MK-106 binary unexpectedly small" }
+          New-Item -ItemType Directory -Force -Path package | Out-Null
+          Copy-Item -LiteralPath $bundle -Destination package -Recurse -Force
+          $packaged = 'package/MK-106.vst3/Contents/x86_64-win/MK-106.vst3'
+          if (-not (Test-Path -LiteralPath $packaged)) { throw 'Packaged VST3 is incomplete' }
+          Compress-Archive -Path 'package/*' -DestinationPath 'MK-106-Classic-Windows-VST3.zip' -Force
+          $zipSize = (Get-Item 'MK-106-Classic-Windows-VST3.zip').Length
+          if ($zipSize -lt 100000) { throw "ZIP unexpectedly small: $zipSize bytes" }
+
+      - name: Publish MK-106 Windows VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: MK-106-Classic-Windows-VST3
+          path: MK-106-Classic-Windows-VST3.zip
+          if-no-files-found: error
+          retention-days: 30
