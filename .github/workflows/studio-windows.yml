@@ -1,0 +1,48 @@
+name: KR-106 Studio Edition - Windows VST3
+
+on:
+  push:
+    branches: [studio-edition]
+    paths:
+      - '.github/studio/**'
+      - '.github/workflows/studio-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-studio-vst3:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Get KR-106 and JUCE submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Apply Studio Edition GUI
+        run: python .github/studio/prepare.py
+
+      - name: Configure VST3 compilation
+        run: cmake -S . -B build -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DCMAKE_SYSTEM_VERSION=10.0 -DKR106_COPY_AFTER_BUILD=OFF
+
+      - name: Build for Windows
+        run: cmake --build build --config Release --target KR106_VST3 --parallel 2
+
+      - name: Locate plugin and package
+        shell: pwsh
+        run: |
+          $plugins = @(Get-ChildItem -Path build -Directory -Recurse -Filter 'Ultramaster KR-106.vst3')
+          if ($plugins.Count -eq 0) { throw 'No VST3 generated' }
+          New-Item -ItemType Directory -Force -Path 'package' | Out-Null
+          Copy-Item -Path $plugins[0].FullName -Destination 'package/Ultramaster KR-106.vst3' -Recurse -Force
+          Compress-Archive -Path 'package/*' -DestinationPath 'KR106-Studio-Windows-VST3.zip' -Force
+
+      - name: Publish VST3 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KR106-Studio-Windows-VST3
+          path: KR106-Studio-Windows-VST3.zip
+          if-no-files-found: error
+          retention-days: 30
