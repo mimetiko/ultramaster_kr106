@@ -1,12 +1,14 @@
-name: MK-106 Classic - Windows VST3
+name: MK-106 Classic v2 - Windows VST3
 
 on:
   pull_request:
     branches: [main]
   push:
-    branches: [mk106-classic]
+    branches: [mk106-classic-v2]
     paths:
       - '.github/studio/mk106_part*.txt'
+      - '.github/studio/refine_v2.py.xz.b64'
+      - '.github/studio/apply_refinement_v2.py'
       - '.github/studio/prepare_mk106.py'
       - '.github/workflows/mk106-windows.yml'
   workflow_dispatch:
@@ -26,6 +28,9 @@ jobs:
 
       - name: Generate MK-106 Classic GUI
         run: python .github/studio/prepare_mk106.py
+
+      - name: Apply v2 realism, contrast, and scope removal
+        run: python .github/studio/apply_refinement_v2.py
 
       - name: Export editor sources for refinement
         shell: pwsh
@@ -60,14 +65,14 @@ jobs:
           Copy-Item -LiteralPath $bundle -Destination package -Recurse -Force
           $packaged = 'package/MK-106.vst3/Contents/x86_64-win/MK-106.vst3'
           if (-not (Test-Path -LiteralPath $packaged)) { throw 'Packaged VST3 is incomplete' }
-          Compress-Archive -Path 'package/*' -DestinationPath 'MK-106-Classic-Windows-VST3.zip' -Force
-          $zipSize = (Get-Item 'MK-106-Classic-Windows-VST3.zip').Length
+          Compress-Archive -Path 'package/*' -DestinationPath 'MK-106-Classic-v2-Windows-VST3.zip' -Force
+          $zipSize = (Get-Item 'MK-106-Classic-v2-Windows-VST3.zip').Length
           if ($zipSize -lt 100000) { throw "ZIP unexpectedly small: $zipSize bytes" }
 
       - name: Publish MK-106 Windows VST3
         uses: actions/upload-artifact@v4
         with:
-          name: MK-106-Classic-Windows-VST3
-          path: MK-106-Classic-Windows-VST3.zip
+          name: MK-106-Classic-v2-Windows-VST3
+          path: MK-106-Classic-v2-Windows-VST3.zip
           if-no-files-found: error
           retention-days: 30
