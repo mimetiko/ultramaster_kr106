@@ -1,0 +1,27 @@
+name: Export MK-106 Classic editor source
+
+on:
+  push:
+    branches: [mk106-classic]
+    paths:
+      - '.github/workflows/export-mk106-editor.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export-editor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Materialize current MK-106 editor
+        run: python3 .github/studio/prepare_mk106.py
+      - name: Package editable source
+        run: |
+          zip -q mk106-classic-editor.zip Source/PluginEditor.cpp Source/PluginEditor.h Source/PluginProcessor.h Source/Controls/KR106Scope.h CMakeLists.txt
+      - name: Upload source bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: MK106-Editable-Source
+          path: mk106-classic-editor.zip
+          if-no-files-found: error
