@@ -32,14 +32,28 @@ jobs:
       - name: Build for Windows
         run: cmake --build build --config Release --target KR106_VST3 --parallel 2
 
-      - name: Locate plugin and package
+      - name: Validate compiled VST3 and package
         shell: pwsh
         run: |
-          $plugins = @(Get-ChildItem -Path build -Directory -Recurse -Filter 'Ultramaster KR-106.vst3')
-          if ($plugins.Count -eq 0) { throw 'No VST3 generated' }
-          New-Item -ItemType Directory -Force -Path 'package' | Out-Null
-          Copy-Item -Path $plugins[0].FullName -Destination 'package/Ultramaster KR-106.vst3' -Recurse -Force
+          $bundle = 'build/KR106_artefacts/Release/VST3/Ultramaster KR-106.vst3'
+          $binary = Join-Path $bundle 'Contents/x86_64-win/Ultramaster KR-106.vst3'
+          if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
+            Get-ChildItem -Path build/KR106_artefacts -File -Recurse | Select-Object FullName,Length | Format-Table
+            throw "Compiled Windows VST3 binary not found: $binary"
+          }
+          $bytes = (Get-Item -LiteralPath $binary).Length
+          Write-Host "Found VST3 binary: $bytes bytes"
+          if ($bytes -lt 1000000) { throw "Compiled VST3 seems too small: $bytes bytes" }
+          New-Item -ItemType Directory -Force -Path package | Out-Null
+          Copy-Item -LiteralPath $bundle -Destination 'package' -Recurse -Force
+          $packagedBinary = 'package/Ultramaster KR-106.vst3/Contents/x86_64-win/Ultramaster KR-106.vst3'
+          if (-not (Test-Path -LiteralPath $packagedBinary -PathType Leaf)) {
+            throw "Windows VST3 binary missing after packaging"
+          }
           Compress-Archive -Path 'package/*' -DestinationPath 'KR106-Studio-Windows-VST3.zip' -Force
+          $zipBytes = (Get-Item 'KR106-Studio-Windows-VST3.zip').Length
+          if ($zipBytes -lt 100000) { throw "Package unexpectedly small: $zipBytes bytes" }
+          Write-Host "Packaged Windows VST3 ZIP: $zipBytes bytes"
 
       - name: Publish VST3 artifact
         uses: actions/upload-artifact@v4
