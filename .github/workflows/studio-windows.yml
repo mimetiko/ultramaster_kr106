@@ -1,6 +1,8 @@
 name: KR-106 Studio Edition - Windows VST3
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [studio-edition]
     paths:
