@@ -1,6 +1,8 @@
 name: MK-106 Classic - Windows VST3
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [mk106-classic]
     paths:
