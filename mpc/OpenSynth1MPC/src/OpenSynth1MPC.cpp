@@ -339,6 +339,90 @@ private:
     uint32_t arpRandom_=0x0138ade1u;
     float chorusPhase_=0.f;
 
+    int countHeld(const std::array<uint8_t,128>& h) const {
+        int n=0;for(int i=0;i<128;++i)if(h[(size_t)i])++n;
+        return n;
+    }
+    void releaseAll(){
+        for(auto& v:voices_){v.amp.noteOff();v.filt.noteOff();v.modEnv.noteOff();}
+        alloc_.reset();arpCurrent_=-1;arpCounter_=0;arpGateCounter_=0;
+    }
+    int arpPeriod() const {
+        const float beat[]={1.f,.5f,.25f,.125f,1.f/3.f,1.f/6.f};
+        float b=beat[std::max(0,std::min(5,s_.arpBeat))];
+        return std::max(16,int(sr_*60.f*b/std::max(30.f,s_.arpBpm)));
+    }
+    int arpPick() {
+        int notes[128],n=0;
+        for(int i=0;i<128;++i)if(arpHeld_[(size_t)i])notes[n++]=i;
+        if(n==0)return -1;
+        int len=n*(s_.arpOct+1),k=0;
+        if(s_.arpMode==0){
+            int cycle=std::max(1,2*len-2),pos=arpStep_%cycle;
+            k=pos<len?pos:2*len-2-pos;
+            arpStep_=(pos+1)%cycle;
+        }else if(s_.arpMode==1){k=arpStep_%len;arpStep_=(arpStep_+1)%len;}
+        else if(s_.arpMode==2){k=len-1-arpStep_%len;arpStep_=(arpStep_+1)%len;}
+        else {
+            arpRandom_^=arpRandom_<<13;arpRandom_^=arpRandom_>>17;arpRandom_^=arpRandom_<<5;
+            k=int(arpRandom_%(uint32_t)len);
+        }
+        return std::min(127,notes[k%n]+12*(k/n));
+    }
+    void startVoice(int idx,int note,int velocity,bool retrigger=true){
+        auto& v=voices_[(size_t)idx];
+        bool active=v.amp.isActive();
+        if(!active || s_.portaMs<=0.f)v.pitchNote=float(note);
+        v.note=note;
+        v.velocity=1.f-s_.vel+s_.vel*(float(velocity)/127.f);
+        if(retrigger||!active){
+            v.p1=v.p2=v.ps=0.f;v.ctrl=0;v.filter.reset();
+            v.amp.noteOn();v.filt.noteOn();v.modEnv.noteOn();
+        }
+    }
+    void arpTick(){
+        if(!s_.arpOn)return;
+        if(arpGateCounter_>0 && --arpGateCounter_==0 && arpCurrent_>=0){
+            int ix=alloc_.noteOff(arpCurrent_);
+            if(ix>=0)release(ix);
+            arpCurrent_=-1;
+        }
+        if(--arpCounter_>0)return;
+        arpCounter_=arpPeriod();
+        if(arpCurrent_>=0){
+            int ix=alloc_.noteOff(arpCurrent_);
+            if(ix>=0)release(ix);
+            arpCurrent_=-1;
+        }
+        int note=arpPick();
+        if(note>=0){
+            int ix=alloc_.noteOn(note,100);
+            startVoice(ix,note,100);
+            arpCurrent_=note;
+            arpGateCounter_=std::max(1,(arpCounter_*s_.arpGate)/100);
+        }
+    }
+    void monoNoteOn(int note,int velocity){
+        int previous=countHeld(monoHeld_);
+        monoHeld_[(size_t)note]=(uint8_t)velocity;
+        auto& v=voices_[0];
+        bool active=v.amp.isActive();
+        bool legato=s_.playMode==2 && previous>0 && active;
+        bool glide=s_.portaMs>0.f && (!s_.autoPorta || previous>0);
+        if(!glide)v.pitchNote=float(note);
+        startVoice(0,note,velocity,!legato);
+    }
+    void monoNoteOff(int note){
+        monoHeld_[(size_t)note]=0;
+        int next=-1;
+        for(int i=0;i<128;++i)if(monoHeld_[(size_t)i])next=i;
+        if(next<0){release(0);return;}
+        auto& v=voices_[0];
+        if(s_.portaMs<=0.f)v.pitchNote=float(next);
+        v.note=next;
+        if(s_.playMode==1){v.amp.noteOn();v.filt.noteOn();v.modEnv.noteOn();}
+    }
+
     static float softDrive(float x,float amount){
         if(amount<=.001f)return x;
         float k=1.f+amount*8.f;
