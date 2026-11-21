@@ -1,0 +1,68 @@
+name: OpenSynth1 upstream - Windows x64 VST3
+
+on:
+  push:
+    branches: [opensynth1-win64-build]
+    paths:
+      - '.github/studio/opensynth1/**'
+      - '.github/workflows/opensynth1-windows.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Windows build harness
+        uses: actions/checkout@v4
+
+      - name: Fetch unmodified upstream OpenSynth1 source
+        shell: pwsh
+        run: |
+          git clone https://github.com/letsdig/OpenSynth1.git opensynth1-src
+          git -C opensynth1-src checkout 0b6104273580d63c936c9b870cd18b3643014389
+          Copy-Item .github/studio/opensynth1/CMakeLists.txt opensynth1-src/CMakeLists.txt
+          Get-Content opensynth1-src/LICENSE | Select-Object -First 2
+
+      - name: Fetch JUCE 9.0.1
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch 9.0.1 https://github.com/juce-framework/JUCE.git JUCE
+
+      - name: Configure Visual Studio x64
+        run: cmake -S opensynth1-src -B opensynth1-build -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+
+      - name: Build OpenSynth1 VST3 x64
+        run: cmake --build opensynth1-build --config Release --target OpenSynth1_VST3 --parallel 2
+
+      - name: Package VST3 and upstream license
+        shell: pwsh
+        run: |
+          $bundle = 'opensynth1-build/OpenSynth1_artefacts/Release/VST3/OpenSynth1.vst3'
+          $bin = Join-Path $bundle 'Contents/x86_64-win/OpenSynth1.vst3'
+          if (-not (Test-Path $bin -PathType Leaf)) {
+            Get-ChildItem opensynth1-build -Recurse -File -Filter *.vst3 | Select-Object FullName,Length
+            throw "VST3 binary not found: $bin"
+          }
+          New-Item -ItemType Directory -Path distribution -Force | Out-Null
+          Copy-Item $bundle distribution/ -Recurse
+          Copy-Item opensynth1-src/LICENSE distribution/LICENSE-OpenSynth1.txt
+          Copy-Item opensynth1-src/README.md distribution/README-upstream.md
+          Copy-Item opensynth1-src/soundbank distribution/soundbank -Recurse
+          Compress-Archive -Path distribution/* -DestinationPath 'OpenSynth1-Windows-x64-VST3.zip' -Force
+          if ((Get-Item 'OpenSynth1-Windows-x64-VST3.zip').Length -lt 100000) {
+            throw "Unexpectedly small ZIP"
+          }
+
+      - name: Upload OpenSynth1 Windows VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenSynth1-Windows-x64-VST3
+          path: OpenSynth1-Windows-x64-VST3.zip
+          if-no-files-found: error
+          retention-days: 30
