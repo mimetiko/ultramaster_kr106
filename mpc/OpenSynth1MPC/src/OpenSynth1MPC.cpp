@@ -170,7 +170,7 @@ private:
     struct Voice {
         ADSR amp,filt;SVF filter;
         float p1=0,p2=0,ps=0;
-        uint32_t rng=0x1234abcdefu;
+        uint32_t rng=0x34abcdefu;
         int note=-1,ctrl=0;
         float velocity=1.f;
     };
