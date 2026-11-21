@@ -16,5 +16,6 @@ script = script.replace(
 script = script.replace(
     "paintFaceplateGrain(g, {x+2.f,y+2.f,w-4.f,h-4.f}, (int)x*19, 90, 0.10f);",
     "patina(g,{x+2.f,y+2.f,w-4.f,h-4.f},uint32_t(x*19),84,0.09f);")
+script = script.replace("paintSubtleEdgeWear(g,", "edgeWear(g,")
 exec(compile(script, str(root / "Source" / "_v5_patch.py"), "exec"),
      {"__file__": str(Path(__file__).resolve()), "__name__": "__main__"})
