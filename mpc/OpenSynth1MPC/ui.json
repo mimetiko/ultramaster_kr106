@@ -9,7 +9,8 @@
         },
         {
           "param": "Osc 2",
-          "widget": "switch"
+          "widget": "knob",
+          "overlay": "menu"
         },
         {
           "param": "Osc Mix",
