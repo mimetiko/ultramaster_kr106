@@ -172,13 +172,19 @@ public:
             v.amp.setSampleRate(sampleRate);
             v.filt.setSampleRate(sampleRate);
         }
+        lfo1_.setSampleRate(sr_);lfo2_.setSampleRate(sr_);
+        chorusL_.fill(0.f);chorusR_.fill(0.f);delayL_.fill(0.f);delayR_.fill(0.f);
+        chorusWrite_=delayWrite_=0;chorusPhase_=0.f;
     }
     void reset() override {
         alloc_.reset();
         for(auto& v:voices_) { v.amp.reset();v.filt.reset();v.filter.reset();v.note=-1;v.p1=0;v.p2=0;v.ps=0;v.ctrl=0; }
+        lfo1_.reset();lfo2_.reset();
+        chorusL_.fill(0.f);chorusR_.fill(0.f);delayL_.fill(0.f);delayR_.fill(0.f);
+        chorusWrite_=delayWrite_=0;chorusPhase_=0.f;
     }
     void process(mpc::ProcessContext& ctx) override {
-        updateParameters();
+        updateParameters(ctx);
         int pos=0;
         for(int i=0;i<ctx.numMidiEvents;++i) {
             const auto& ev=ctx.midi[i];
@@ -190,9 +196,14 @@ public:
         render(ctx,pos,ctx.numFrames);
         float* l=ctx.outputs[0];float* r=ctx.numOutputs>1?ctx.outputs[1]:nullptr;
         float master=std::pow(10.f,s_.master/20.f);
-        for(int i=0;i<ctx.numFrames;++i) {
-            l[i]=bounded(l[i]*master,-1.f,1.f);
-            if(r) r[i]=l[i];
+        for(int i=0;i<ctx.numFrames;++i){
+            float dry=softDrive(l[i],s_.drive)*master;
+            float left=dry,right=dry;
+            // Keep delay state advancing even when mix is zero, avoiding stale echoes.
+            chorus(left,right);
+            delay(left,right);
+            l[i]=bounded(left,-1.f,1.f);
+            if(r)r[i]=bounded(right,-1.f,1.f);
         }
     }
 
@@ -207,14 +218,58 @@ private:
     struct Settings {
         int osc1=1,osc2=1,semi2=0,fine2=0,suboct=0,fmode=0,bend=2;
         bool ring=false,sync=false;
+        float l1pitch=0.f,l1filter=0.f,l2pwm=0.f,l2amp=0.f;
+        float chorusRate=.35f,chorusDepth=.35f,chorusMix=0.f;
+        float delayTime=.36f,delayFB=.28f,delayMix=0.f,drive=0.f;
         float mix=.4f,pw=.5f,sub=0,fm=0,master=-12,cutoff=3000,reso=.15f,fenv=.45f,vel=.6f;
     } s_;
     static constexpr int kVoices=8;
     Voice voices_[kVoices];
     VoiceAllocator<kVoices> alloc_;
     float sr_=44100.f;
+    LFO lfo1_,lfo2_;
+    float l1_=0.f,l2_=0.f;
+    std::array<float,144000> delayL_{},delayR_{};
+    std::array<float,4096> chorusL_{},chorusR_{};
+    int delayWrite_=0,chorusWrite_=0;
+    float chorusPhase_=0.f;
 
-    void updateParameters() {
+    static float softDrive(float x,float amount){
+        if(amount<=.001f)return x;
+        float k=1.f+amount*8.f;
+        return (x*k)/(1.f+std::abs(x)*(k-1.f));
+    }
+    void chorus(float& l,float& r){
+        constexpr int N=4096;
+        chorusPhase_=wrap(chorusPhase_+s_.chorusRate/sr_);
+        float swing=std::sin(chorusPhase_*pi2);
+        int center=int(sr_*.013f);
+        int width=int(sr_*.008f*s_.chorusDepth);
+        auto tap=[&](const std::array<float,N>& b,int d){
+            return b[(size_t)((chorusWrite_-std::max(1,d)+2*N)%N)];
+        };
+        float wetL=tap(chorusL_,center+int(width*swing));
+        float wetR=tap(chorusR_,center-int(width*swing));
+        chorusL_[(size_t)chorusWrite_]=l;
+        chorusR_[(size_t)chorusWrite_]=r;
+        chorusWrite_=(chorusWrite_+1)%N;
+        l=l*(1.f-s_.chorusMix)+wetL*s_.chorusMix;
+        r=r*(1.f-s_.chorusMix)+wetR*s_.chorusMix;
+    }
+    void delay(float& l,float& r){
+        constexpr int N=144000;
+        int d=std::min(N-2,std::max(1,int(s_.delayTime*sr_)));
+        int tl=(delayWrite_-d+N)%N;
+        int tr=(delayWrite_-std::min(N-2,d+int(sr_*.007f))+N)%N;
+        float dl=delayL_[(size_t)tl],dr=delayR_[(size_t)tr];
+        delayL_[(size_t)delayWrite_]=bounded(l+dr*s_.delayFB,-2.f,2.f);
+        delayR_[(size_t)delayWrite_]=bounded(r+dl*s_.delayFB,-2.f,2.f);
+        delayWrite_=(delayWrite_+1)%N;
+        l=l*(1.f-s_.delayMix)+dl*s_.delayMix;
+        r=r*(1.f-s_.delayMix)+dr*s_.delayMix;
+    }
+
+    void updateParameters(mpc::ProcessContext& ctx) {
         s_.osc1=getInt(Osc1);s_.osc2=getInt(Osc2);s_.semi2=getInt(Semi2);s_.fine2=getInt(Fine2);
         s_.suboct=getInt(SubOct);s_.fmode=getInt(FMode);
         s_.ring=getBool(Ring);s_.sync=getBool(Sync);s_.bend=getInt(Bend);
@@ -223,6 +278,21 @@ private:
         s_.master=get(Master);s_.cutoff=get(Cutoff);
         s_.reso=get(Reson)*.01f;s_.fenv=get(FEnvAmt)*.01f;s_.vel=get(Velocity)*.01f;
         alloc_.setBendRange((float)s_.bend);
+        s_.l1pitch=get(L1Pitch); s_.l1filter=get(L1Filter)*.01f;
+        s_.l2pwm=get(L2PWM)*.01f; s_.l2amp=get(L2Amp)*.01f;
+        lfo1_.setShape(getInt(L1Shape));lfo2_.setShape(getInt(L2Shape));
+        float bpm=(ctx.transport.tempoValid && ctx.transport.bpm>20.0)?float(ctx.transport.bpm):120.f;
+        if(getBool(L1Sync)){
+            lfo1_.setTempoSync(bpm,divisionBeats(getInt(L1Div)));
+            if(ctx.transport.playing && ctx.transport.ppqValid)lfo1_.syncToPpq(ctx.transport.ppqPos);
+        }else lfo1_.setFrequency(get(L1Rate));
+        if(getBool(L2Sync)){
+            lfo2_.setTempoSync(bpm,divisionBeats(getInt(L2Div)));
+            if(ctx.transport.playing && ctx.transport.ppqValid)lfo2_.syncToPpq(ctx.transport.ppqPos);
+        }else lfo2_.setFrequency(get(L2Rate));
+        s_.chorusRate=get(ChorusRate);s_.chorusDepth=get(ChorusDepth)*.01f;s_.chorusMix=get(ChorusMix)*.01f;
+        s_.delayTime=get(DelayTime)*.001f;s_.delayFB=get(DelayFB)*.01f;s_.delayMix=get(DelayMix)*.01f;
+        s_.drive=get(Drive)*.01f;
         float fa=envMs(get(FAttack)),fd=envMs(get(FDecay)),fs=susLevel(get(FSustain)),fr=envMs(get(FRelease));
         float aa=envMs(get(AAttack)),ad=envMs(get(ADecay)),as=susLevel(get(ASustain)),ar=envMs(get(ARelease));
         for(auto& v:voices_) {
@@ -249,27 +319,31 @@ private:
     void render(mpc::ProcessContext& ctx,int from,int to) {
         float* out=ctx.outputs[0];
         for(int i=from;i<to;++i){
+            l1_=lfo1_.process();l2_=lfo2_.process();
             float sum=0.f;
             for(int ix=0;ix<kVoices;++ix){
                 Voice& v=voices_[ix];if(!v.amp.isActive())continue;
                 float fa=v.filt.process(),aa=v.amp.process();
                 float base=alloc_.noteToHz((float)v.note);
-                float d1=bounded(base/sr_,0.f,.45f);
-                float d2=bounded((base*std::pow(2.f,(s_.semi2+s_.fine2*.01f)/12.f))/sr_,0.f,.45f);
-                float ds=bounded(base/(sr_*(s_.suboct==0?2.f:4.f)),0.f,.45f);
+                float pitch=std::pow(2.f,(l1_*s_.l1pitch)/12.f);
+                float d1=bounded(base*pitch/sr_,0.f,.45f);
+                float d2=bounded(base*pitch*std::pow(2.f,(s_.semi2+s_.fine2*.01f)/12.f)/sr_,0.f,.45f);
+                float ds=bounded(base*pitch/(sr_*(s_.suboct==0?2.f:4.f)),0.f,.45f);
+                float pw=bounded(s_.pw+l2_*s_.l2pwm*.45f,.05f,.95f);
                 // OpenSynth1-style oscillator-2 phase modulation of oscillator-1.
-                float osc2=s_.osc2==0?0.f:oscSample(v.p2,d2,s_.osc2,s_.pw,v.rng);
+                float osc2=s_.osc2==0?0.f:oscSample(v.p2,d2,s_.osc2,pw,v.rng);
                 float phase=wrap(v.p1+osc2*(s_.fm*s_.fm*3.5f));
-                float osc1=oscSample(phase,d1,s_.osc1,s_.pw,v.rng);
+                float osc1=oscSample(phase,d1,s_.osc1,pw,v.rng);
                 float sub=oscSample(v.ps,ds,2,.5f,v.rng);
                 float mixed=s_.ring ? osc1*osc2 : osc1*(1.f-s_.mix)+osc2*s_.mix;
                 mixed += sub*s_.sub*.45f;
                 if(++v.ctrl>=16) {
                     v.ctrl=0;
-                    float oct=s_.fenv*fa*7.f;
+                    float oct=bounded(s_.fenv*fa*7.f+s_.l1filter*l1_*3.f,-10.f,10.f);
                     v.filter.set(bounded(s_.cutoff*std::pow(2.f,oct),25.f,sr_*.44f),s_.reso);
                 }
-                sum+=v.filter.process(mixed,s_.fmode)*aa*v.velocity*.24f;
+                float tremolo=1.f-.5f*s_.l2amp*(1.f+l2_);
+                sum+=v.filter.process(mixed,s_.fmode)*aa*v.velocity*.24f*tremolo;
                 bool wrapped=v.p1+d1>=1.f;
                 v.p1=wrap(v.p1+d1);
                 v.p2=s_.sync&&wrapped?0.f:wrap(v.p2+d2);
