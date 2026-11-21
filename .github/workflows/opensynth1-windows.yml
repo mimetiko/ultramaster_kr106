@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/studio/opensynth1/**'
       - '.github/workflows/opensynth1-windows.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
