@@ -1,8 +1,8 @@
-name: Synth 1 MPC v0.2 - ARM32 and ARM64
+name: Synth 1 MPC v0.3 - ARM32 and ARM64
 
 on:
   push:
-    branches: [opensynth1-mpc-v02-ui-mod-fx]
+    branches: [synth1-mpc-v03-sy1-import]
     paths:
       - 'mpc/OpenSynth1MPC/**'
       - '.github/workflows/opensynth1-mpc.yml'
@@ -28,6 +28,10 @@ jobs:
       - name: Build and validate MPC binaries
         working-directory: sdk
         run: python3 tools/build.py plugins/OpenSynth1MPC --target all
+      - name: Audio and state simulation test
+        working-directory: sdk
+        run: |
+          .sdk-tools/host_sim plugins/OpenSynth1MPC/build/native/synth-1.so test --seconds 3 --notes 48,60,67 --playing
       - name: Package plugin for SD card
         shell: bash
         run: |
@@ -35,26 +39,31 @@ jobs:
           mkdir -p dist/'VST2 Plugins'
           cp -r 'sdk/plugins/OpenSynth1MPC/build/Mimetiko - VST - Synth 1' dist/'VST2 Plugins/'
           cp 'sdk/LICENSE' dist/LICENSE-MPC-SDK.txt
+          test -s 'dist/VST2 Plugins/Mimetiko - VST - Synth 1/Content/SY1/Factory/001.sy1'
           cp 'mpc/OpenSynth1MPC/LICENSE-OpenSynth1.txt' dist/LICENSE-OpenSynth1.txt
           test -s 'dist/VST2 Plugins/Mimetiko - VST - Synth 1/Plugin Skins/TUI.json'
           test -s 'dist/VST2 Plugins/Mimetiko - VST - Synth 1/Plugin Skins/Q-Links.json'
           cat > dist/INSTALL.txt <<'TXT'
-          Synth 1 0.2 - experimental partial OpenSynth1 port
+          Synth 1 0.3 - experimental partial OpenSynth1 port with SY1 import
           1. Keep a backup of any current MPC projects.
           2. Extract the ZIP and copy the 'VST2 Plugins' directory to the
              ROOT of your MPC One SD card, merging existing files.
           3. On MPC OS 3.10.1+ enable External Plugin Support.
           4. Look under External Plugins for 'Synth 1'.
-          5. Test MIDI notes, program selection and project save/reload.
+          5. Drop downloaded original Synth1 .sy1 files into:
+             VST2 Plugins/Mimetiko - VST - Synth 1/Content/SY1/<YourBankName>/*.sy1
+             The folder itself should contain one level of named bank folders.
+          6. Restart MPC/reinsert plugin to refresh banks; choose programs in preset selector.
+          7. Test notes, arp, filter, presets, and save/reload on a NEW project.
           This stage does NOT yet reproduce every OpenSynth1 function or presets.
           Original OpenSynth1: https://github.com/letsdig/OpenSynth1 (MIT).
           TXT
-          (cd dist && zip -rq ../Synth-1-MPC-ARM32-ARM64-v02.zip .)
-          test -s Synth-1-MPC-ARM32-ARM64-v02.zip
+          (cd dist && zip -rq ../Synth-1-MPC-ARM32-ARM64-v03.zip .)
+          test -s Synth-1-MPC-ARM32-ARM64-v03.zip
           find dist -type f | sort
       - name: Upload validated plugin
         uses: actions/upload-artifact@v4
         with:
-          name: Synth-1-MPC-v02
-          path: Synth-1-MPC-ARM32-ARM64-v02.zip
+          name: Synth-1-MPC-v03
+          path: Synth-1-MPC-ARM32-ARM64-v03.zip
           retention-days: 30
