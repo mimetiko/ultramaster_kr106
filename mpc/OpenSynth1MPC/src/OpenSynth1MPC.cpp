@@ -85,7 +85,7 @@ public:
 
     static mpc::PluginInfo makeInfo() {
         mpc::PluginInfo i;
-        i.name="OpenSynth1 MPC Core";
+        i.name="Synth 1";
         i.vendor="Mimetiko";
         i.uniqueId=MPC_FOURCC('M','O','S','1');
         i.version=1000;
