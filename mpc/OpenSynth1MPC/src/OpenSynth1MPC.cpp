@@ -534,31 +534,54 @@ private:
     void render(mpc::ProcessContext& ctx,int from,int to) {
         float* out=ctx.outputs[0];
         for(int i=from;i<to;++i){
+            arpTick();
             l1_=lfo1_.process();l2_=lfo2_.process();
+            // MIDI-independent LFO modulation is computed once per output sample.
+            float pitchLfo=l1_*s_.l1pitch,osc2Lfo=0.f,filtLfo=l1_*s_.l1filter;
+            float ampLfo=l2_*s_.l2amp,pwmLfo=l2_*s_.l2pwm,fmLfo=0.f;
+            auto route=[&](int dest,float wave,float depth){
+                switch(dest){
+                    case 0:pitchLfo+=wave*depth*8.f;break;
+                    case 1:osc2Lfo+=wave*depth*8.f;break;
+                    case 2:filtLfo+=wave*depth;break;
+                    case 3:ampLfo+=wave*depth;break;
+                    case 4:pwmLfo+=wave*depth;break;
+                    case 5:fmLfo+=wave*depth;break;
+                }
+            };
+            route(s_.l1dest,l1_,s_.l1depth);
+            route(s_.l2dest,l2_,s_.l2depth);
             float sum=0.f;
             for(int ix=0;ix<kVoices;++ix){
                 Voice& v=voices_[ix];if(!v.amp.isActive())continue;
                 float fa=v.filt.process(),aa=v.amp.process();
-                float base=alloc_.noteToHz((float)v.note);
-                float pitch=std::pow(2.f,(l1_*s_.l1pitch)/12.f);
+                float modEnv=v.modEnv.process();
+                v.pitchNote=v.pitchNote*s_.glideK+(1.f-s_.glideK)*float(v.note);
+                float base=alloc_.noteToHz(v.pitchNote);
+                float pitch=std::pow(2.f,pitchLfo/12.f);
                 float d1=bounded(base*pitch/sr_,0.f,.45f);
-                float d2=bounded(base*pitch*std::pow(2.f,(s_.semi2+s_.fine2*.01f)/12.f)/sr_,0.f,.45f);
+                float envOsc2=s_.modOn&&s_.modDest==0?modEnv*s_.modAmount*24.f:0.f;
+                float d2=bounded(base*pitch*std::pow(2.f,(s_.semi2+s_.fine2*.01f+osc2Lfo+envOsc2)/12.f)/sr_,0.f,.45f);
                 float ds=bounded(base*pitch/(sr_*(s_.suboct==0?2.f:4.f)),0.f,.45f);
-                float pw=bounded(s_.pw+l2_*s_.l2pwm*.45f,.05f,.95f);
+                float envPw=s_.modOn&&s_.modDest==2?modEnv*s_.modAmount*.4f:0.f;
+                float pw=bounded(s_.pw+pwmLfo*.45f+envPw,.05f,.95f);
                 // OpenSynth1-style oscillator-2 phase modulation of oscillator-1.
                 float osc2=s_.osc2==0?0.f:oscSample(v.p2,d2,s_.osc2,pw,v.rng);
-                float phase=wrap(v.p1+osc2*(s_.fm*s_.fm*3.5f));
+                float envFm=s_.modOn&&s_.modDest==1?modEnv*s_.modAmount:.0f;
+                float effectiveFm=bounded(s_.fm+fmLfo*.6f+envFm*.6f,0.f,1.f);
+                float phase=wrap(v.p1+osc2*(effectiveFm*effectiveFm*3.5f));
                 float osc1=oscSample(phase,d1,s_.osc1,pw,v.rng);
-                float sub=oscSample(v.ps,ds,2,.5f,v.rng);
+                int subOscShape[]={0,3,1,2};
+                float sub=oscSample(v.ps,ds,subOscShape[std::max(0,std::min(3,s_.subShape))],.5f,v.rng);
                 float mixed=s_.ring ? osc1*osc2 : osc1*(1.f-s_.mix)+osc2*s_.mix;
                 mixed += sub*s_.sub*.45f;
                 if(++v.ctrl>=16) {
                     v.ctrl=0;
-                    float oct=bounded(s_.fenv*fa*7.f+s_.l1filter*l1_*3.f,-10.f,10.f);
+                    float oct=bounded(s_.fenv*fa*7.f+filtLfo*3.f+s_.keyTrack*(v.pitchNote-48.f)/12.f,-10.f,10.f);
                     v.filter.set(bounded(s_.cutoff*std::pow(2.f,oct),25.f,sr_*.44f),s_.reso);
                 }
-                float tremolo=1.f-.5f*s_.l2amp*(1.f+l2_);
-                sum+=v.filter.process(mixed,s_.fmode)*aa*v.velocity*.24f*tremolo;
+                float tremolo=1.f-.5f*bounded(ampLfo,-1.f,1.f)*(1.f+l2_);
+                sum+=v.filter.process(mixed,s_.fmode)*aa*v.velocity*.24f*bounded(tremolo,0.f,1.5f);
                 bool wrapped=v.p1+d1>=1.f;
                 v.p1=wrap(v.p1+d1);
                 v.p2=s_.sync&&wrapped?0.f:wrap(v.p2+d2);
