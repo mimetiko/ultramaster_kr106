@@ -1,0 +1,128 @@
+{
+  "pages": [
+    {
+      "name": "OSC",
+      "controls": [
+        {
+          "param": "Osc 1",
+          "widget": "switch"
+        },
+        {
+          "param": "Osc 2",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "Osc Mix",
+          "widget": "knob"
+        },
+        {
+          "param": "Color/PW",
+          "widget": "knob"
+        },
+        {
+          "param": "Osc2 Semi",
+          "widget": "knob"
+        },
+        {
+          "param": "Osc2 Fine",
+          "widget": "knob"
+        },
+        {
+          "param": "Sub Level",
+          "widget": "knob"
+        },
+        {
+          "param": "Sub Oct",
+          "widget": "switch"
+        },
+        {
+          "param": "FM Depth",
+          "widget": "knob"
+        },
+        {
+          "param": "Ring Mod",
+          "widget": "switch"
+        },
+        {
+          "param": "Osc Sync",
+          "widget": "switch"
+        },
+        {
+          "param": "Master",
+          "widget": "knob"
+        }
+      ]
+    },
+    {
+      "name": "FILTER",
+      "controls": [
+        {
+          "param": "Cutoff",
+          "widget": "knob"
+        },
+        {
+          "param": "Resonance",
+          "widget": "knob"
+        },
+        {
+          "param": "Filter Mode",
+          "widget": "switch"
+        },
+        {
+          "param": "Filter Env",
+          "widget": "knob"
+        },
+        {
+          "param": "F Attack",
+          "widget": "knob"
+        },
+        {
+          "param": "F Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "F Sustain",
+          "widget": "knob"
+        },
+        {
+          "param": "F Release",
+          "widget": "knob"
+        }
+      ]
+    },
+    {
+      "name": "AMP",
+      "controls": [
+        {
+          "param": "A Attack",
+          "widget": "knob"
+        },
+        {
+          "param": "A Decay",
+          "widget": "knob"
+        },
+        {
+          "param": "A Sustain",
+          "widget": "knob"
+        },
+        {
+          "param": "A Release",
+          "widget": "knob"
+        },
+        {
+          "param": "Velocity",
+          "widget": "knob"
+        },
+        {
+          "param": "Bend Range",
+          "widget": "knob"
+        },
+        {
+          "param": "Master",
+          "widget": "knob"
+        }
+      ]
+    }
+  ]
+}
