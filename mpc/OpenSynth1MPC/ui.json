@@ -378,7 +378,8 @@
         },
         {
           "param": "Arp Oct",
-          "widget": "switch"
+          "widget": "knob",
+          "overlay": "menu"
         },
         {
           "param": "Arp Beat",
