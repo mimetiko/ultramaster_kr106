@@ -482,11 +482,25 @@ private:
         s_.chorusRate=get(ChorusRate);s_.chorusDepth=get(ChorusDepth)*.01f;s_.chorusMix=get(ChorusMix)*.01f;
         s_.delayTime=get(DelayTime)*.001f;s_.delayFB=get(DelayFB)*.01f;s_.delayMix=get(DelayMix)*.01f;
         s_.drive=get(Drive)*.01f;
+        s_.arpOn=getBool(ArpOn);s_.arpMode=getInt(ArpMode);s_.arpOct=getInt(ArpOct);
+        s_.arpBeat=getInt(ArpBeat);s_.arpGate=getInt(ArpGate);
+        s_.playMode=getInt(PlayMode);s_.portaMs=get(Porta);s_.autoPorta=getBool(AutoPorta);
+        s_.keyTrack=get(KeyTrack)*.01f;s_.subShape=getInt(SubShape);
+        s_.modOn=getBool(OscModOn);s_.modAmount=(get(OscModAmt)-64.f)/64.f;s_.modDest=getInt(OscModDest);
+        s_.l1dest=getInt(L1Dest);s_.l2dest=getInt(L2Dest);
+        s_.l1depth=get(L1Depth)/127.f;s_.l2depth=get(L2Depth)/127.f;
+        s_.arpBpm=bpm;
+        s_.glideK=s_.portaMs>0.f?std::exp(-1000.f/(sr_*s_.portaMs)):0.f;
+        if(s_.arpOn!=arpWasOn_ || s_.playMode!=lastPlayMode_){
+            releaseAll();arpHeld_.fill(0);monoHeld_.fill(0);arpStep_=0;
+            arpWasOn_=s_.arpOn;lastPlayMode_=s_.playMode;
+        }
         float fa=envMs(get(FAttack)),fd=envMs(get(FDecay)),fs=susLevel(get(FSustain)),fr=envMs(get(FRelease));
         float aa=envMs(get(AAttack)),ad=envMs(get(ADecay)),as=susLevel(get(ASustain)),ar=envMs(get(ARelease));
         for(auto& v:voices_) {
             v.filt.set(fa,fd,fs,fr);
             v.amp.set(aa,ad,as,ar);
+            v.modEnv.set(envMs(get(OscModAttack)),envMs(get(OscModDecay)),0.f,5.f);
         }
     }
     void release(int n) { voices_[n].amp.noteOff();voices_[n].filt.noteOff();voices_[n].modEnv.noteOff(); }
