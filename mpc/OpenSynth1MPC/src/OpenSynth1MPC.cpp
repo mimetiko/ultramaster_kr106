@@ -249,8 +249,20 @@ public:
             if(has(48))put(48,L2Rate,.05f*std::pow(600.f,clampRaw(raw(48))/127.f));
             put(67,L1Sync,raw(67));put(69,L2Sync,raw(69));
             put(44,L1Depth,raw(44));put(49,L2Depth,raw(49));
-            if(has(41))put(41,L1Dest,raw(41)>=1?raw(41)-1:0);
-            if(has(46))put(46,L2Dest,raw(46)>=1?raw(46)-1:0);
+            // Original destination order is osc2, both oscs, filter, amp, PWM, FM, pan.
+            // Current engine supports the first six routings; pan maps to pitch.
+            auto destMap=[](int v)->int {
+                int d=std::max(0,v-1);
+                switch(d){case 0:return 1;case 1:return 0;case 2:return 2;
+                          case 3:return 3;case 4:return 4;case 5:return 5;
+                          default:return 0;}
+            };
+            if(has(41))put(41,L1Dest,(float)destMap((int)raw(41)));
+            if(has(46))put(46,L2Dest,(float)destMap((int)raw(46)));
+            if(has(57) && raw(57)<.5f)v[(size_t)L1Depth]=0.f;
+            if(has(58) && raw(58)<.5f)v[(size_t)L2Depth]=0.f;
+            if(has(65) && raw(65)<.5f)v[(size_t)DelayMix]=0.f;
+            if(has(66) && raw(66)<.5f)v[(size_t)ChorusMix]=0.f;
             put(54,ChorusRate,.05f+5.95f*clampRaw(raw(54))/127.f);
             put(53,ChorusDepth,pct(53));put(56,ChorusMix,pct(56)*.70f);
             put(36,DelayFB,pct(36)*.85f);
