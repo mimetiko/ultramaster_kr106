@@ -268,6 +268,7 @@ public:
             v.filter.setSampleRate(sampleRate);
             v.amp.setSampleRate(sampleRate);
             v.filt.setSampleRate(sampleRate);
+            v.modEnv.setSampleRate(sampleRate);
         }
         lfo1_.setSampleRate(sr_);lfo2_.setSampleRate(sr_);
         chorusL_.fill(0.f);chorusR_.fill(0.f);delayL_.fill(0.f);delayR_.fill(0.f);
@@ -275,7 +276,7 @@ public:
     }
     void reset() override {
         alloc_.reset();
-        for(auto& v:voices_) { v.amp.reset();v.filt.reset();v.filter.reset();v.note=-1;v.p1=0;v.p2=0;v.ps=0;v.ctrl=0; }
+        for(auto& v:voices_) { v.amp.reset();v.filt.reset();v.modEnv.reset();v.filter.reset();v.note=-1;v.p1=0;v.p2=0;v.ps=0;v.ctrl=0; }
         lfo1_.reset();lfo2_.reset();
         chorusL_.fill(0.f);chorusR_.fill(0.f);delayL_.fill(0.f);delayR_.fill(0.f);
         chorusWrite_=delayWrite_=0;chorusPhase_=0.f;
@@ -306,15 +307,17 @@ public:
 
 private:
     struct Voice {
-        ADSR amp,filt;SVF filter;
-        float p1=0,p2=0,ps=0;
+        ADSR amp,filt,modEnv;SVF filter;
+        float p1=0,p2=0,ps=0,pitchNote=60.f;
         uint32_t rng=0x34abcdefu;
         int note=-1,ctrl=0;
         float velocity=1.f;
     };
     struct Settings {
         int osc1=1,osc2=1,semi2=0,fine2=0,suboct=0,fmode=0,bend=2;
-        bool ring=false,sync=false;
+        bool ring=false,sync=false,modOn=false,arpOn=false,autoPorta=false;
+        int playMode=0,arpMode=1,arpOct=0,arpBeat=2,arpGate=60,subShape=3,modDest=0,l1dest=2,l2dest=4;
+        float portaMs=0.f,glideK=0.f,keyTrack=.5f,modAmount=0.f,l1depth=0.f,l2depth=0.f,arpBpm=120.f;
         float l1pitch=0.f,l1filter=0.f,l2pwm=0.f,l2amp=0.f;
         float chorusRate=.35f,chorusDepth=.35f,chorusMix=0.f;
         float delayTime=.36f,delayFB=.28f,delayMix=0.f,drive=0.f;
@@ -329,6 +332,11 @@ private:
     std::array<float,144000> delayL_{},delayR_{};
     std::array<float,4096> chorusL_{},chorusR_{};
     int delayWrite_=0,chorusWrite_=0;
+    std::array<uint8_t,128> arpHeld_{},monoHeld_{};
+    int arpCurrent_=-1,arpStep_=0,arpCounter_=0,arpGateCounter_=0;
+    bool arpWasOn_=false;
+    int lastPlayMode_=0;
+    uint32_t arpRandom_=0x0138ade1u;
     float chorusPhase_=0.f;
 
     static float softDrive(float x,float amount){
