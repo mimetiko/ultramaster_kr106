@@ -1,0 +1,60 @@
+name: Synth 1 MPC v0.2 - ARM32 and ARM64
+
+on:
+  push:
+    branches: [opensynth1-mpc-v02-ui-mod-fx]
+    paths:
+      - 'mpc/OpenSynth1MPC/**'
+      - '.github/workflows/opensynth1-mpc.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout MPC port source
+      - name: Clone official Akai SDK
+        run: |
+          git clone --depth 1 https://github.com/inmusic-software/mpc-plugin-builder-sdk.git sdk
+          mkdir -p sdk/plugins/OpenSynth1MPC
+          cp -r mpc/OpenSynth1MPC/. sdk/plugins/OpenSynth1MPC/
+      - name: Build and validate MPC binaries
+        working-directory: sdk
+        run: python3 tools/build.py plugins/OpenSynth1MPC --target all
+      - name: Package plugin for SD card
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p dist/'VST2 Plugins'
+          cp -r 'sdk/plugins/OpenSynth1MPC/build/Mimetiko - VST - Synth 1' dist/'VST2 Plugins/'
+          cp 'sdk/LICENSE' dist/LICENSE-MPC-SDK.txt
+          cp 'mpc/OpenSynth1MPC/LICENSE-OpenSynth1.txt' dist/LICENSE-OpenSynth1.txt
+          test -s 'dist/VST2 Plugins/Mimetiko - VST - Synth 1/Plugin Skins/TUI.json'
+          test -s 'dist/VST2 Plugins/Mimetiko - VST - Synth 1/Plugin Skins/Q-Links.json'
+          cat > dist/INSTALL.txt <<'TXT'
+          Synth 1 0.2 - experimental partial OpenSynth1 port
+          1. Keep a backup of any current MPC projects.
+          2. Extract the ZIP and copy the 'VST2 Plugins' directory to the
+             ROOT of your MPC One SD card, merging existing files.
+          3. On MPC OS 3.10.1+ enable External Plugin Support.
+          4. Look under External Plugins for 'Synth 1'.
+          5. Test MIDI notes, program selection and project save/reload.
+          This stage does NOT yet reproduce every OpenSynth1 function or presets.
+          Original OpenSynth1: https://github.com/letsdig/OpenSynth1 (MIT).
+          TXT
+          (cd dist && zip -rq ../Synth-1-MPC-ARM32-ARM64-v02.zip .)
+          test -s Synth-1-MPC-ARM32-ARM64-v02.zip
+          find dist -type f | sort
+      - name: Upload validated plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: Synth-1-MPC-v02
+          path: Synth-1-MPC-ARM32-ARM64-v02.zip
+          retention-days: 30
