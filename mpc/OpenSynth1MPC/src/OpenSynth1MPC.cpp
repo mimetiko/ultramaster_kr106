@@ -13,6 +13,9 @@
 #include "dsp/svf.h"
 #include "dsp/voice.h"
 #include "dsp/math.h"
+#include "dsp/lfo.h"
+#include "dsp/tempo.h"
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <vector>
@@ -80,6 +83,9 @@ public:
         FM, Ring, Sync, Master,
         Cutoff, Reson, FMode, FEnvAmt, FAttack, FDecay, FSustain, FRelease,
         AAttack, ADecay, ASustain, ARelease, Velocity, Bend,
+        L1Shape,L1Rate,L1Sync,L1Div,L1Pitch,L1Filter,
+        L2Shape,L2Rate,L2Sync,L2Div,L2PWM,L2Amp,
+        ChorusRate,ChorusDepth,ChorusMix,DelayTime,DelayFB,DelayMix,Drive,
         NumParams
     };
 
@@ -88,7 +94,7 @@ public:
         i.name="Synth 1";
         i.vendor="Mimetiko";
         i.uniqueId=MPC_FOURCC('M','O','S','1');
-        i.version=1000;
+        i.version=2000;
         i.isInstrument=true;
         i.numInputs=0; i.numOutputs=2;
         return i;
@@ -121,6 +127,27 @@ public:
         addParam(intParam("arel","A Release",0,127,31));
         addParam(floatParam("vel","Velocity",0,100,60,"%",0));
         addParam(intParam("bend","Bend Range",0,24,2,"st"));
+        // Modulation, with independent tempo-syncable LFOs.
+        addParam(choiceParam("l1shape","LFO1 Wave",{"Sine","Triangle","Saw","Square","S&H"},0));
+        addParam(logParam("l1rate","LFO1 Rate",0.05f,30.f,3.f,"Hz",2));
+        addParam(boolParam("l1sync","LFO1 Sync",false));
+        addParam(choiceParam("l1div","LFO1 Div",divisionNames(),kDivisionQuarter));
+        addParam(floatParam("l1pitch","LFO1 Pitch",0.f,12.f,0.f,"st",2));
+        addParam(floatParam("l1filt","LFO1 Filter",-100.f,100.f,0.f,"%",0));
+        addParam(choiceParam("l2shape","LFO2 Wave",{"Sine","Triangle","Saw","Square","S&H"},0));
+        addParam(logParam("l2rate","LFO2 Rate",0.05f,30.f,.7f,"Hz",2));
+        addParam(boolParam("l2sync","LFO2 Sync",false));
+        addParam(choiceParam("l2div","LFO2 Div",divisionNames(),kDivisionQuarter));
+        addParam(floatParam("l2pwm","LFO2 PWM",0.f,100.f,0.f,"%",0));
+        addParam(floatParam("l2amp","LFO2 Amp",0.f,100.f,0.f,"%",0));
+        // Lightweight stereo effects and master saturation.
+        addParam(logParam("chorate","Chorus Rate",0.05f,6.f,.35f,"Hz",2));
+        addParam(floatParam("chodepth","Chorus Depth",0.f,100.f,35.f,"%",0));
+        addParam(floatParam("chomix","Chorus Mix",0.f,70.f,0.f,"%",0));
+        addParam(logParam("dtime","Delay Time",20.f,1200.f,360.f,"ms",0));
+        addParam(floatParam("dfb","Delay FB",0.f,85.f,28.f,"%",0));
+        addParam(floatParam("dmix","Delay Mix",0.f,70.f,0.f,"%",0));
+        addParam(floatParam("drive","Drive",0.f,100.f,0.f,"%",0));
 
         auto preset=[this](const char* name,std::initializer_list<std::pair<int,float>> overrides) {
             std::vector<float> v((size_t)numParams());
@@ -133,6 +160,9 @@ public:
         preset("Slow Cloud",{{Osc1,3},{Osc2,2},{Mix,50},{Fine2,11},{Cutoff,1500},{FEnvAmt,25},{FAttack,70},{FRelease,75},{AAttack,65},{ARelease,83}});
         preset("Ring Rust",{{Osc1,1},{Osc2,1},{Semi2,7},{Ring,1},{Cutoff,2900},{Reson,57},{FEnvAmt,-30},{ADecay,22}});
         preset("Phase Glass",{{Osc1,0},{Osc2,1},{FM,18},{Color,60},{Cutoff,7500},{Reson,15},{AAttack,6},{ARelease,45}});
+        preset("Pulsing Drift",{{Osc1,2},{Osc2,2},{Color,38},{Cutoff,1650},{Reson,30},{L1Rate,1.2f},{L1Filter,38},{L2Rate,.17f},{L2PWM,70},{ChorusMix,24}});
+        preset("Broken Glass",{{Osc1,1},{Osc2,1},{FM,27},{Semi2,9},{Cutoff,6000},{L1Rate,5.2f},{L1Pitch,.15f},{Drive,22},{DelayMix,18}});
+        preset("Dust Echo",{{Osc1,3},{Osc2,1},{Fine2,8},{AAttack,45},{ARelease,78},{Cutoff,950},{L1Filter,21},{ChorusMix,27},{DelayMix,26}});
     }
 
     void prepare(double sampleRate, int) override {
