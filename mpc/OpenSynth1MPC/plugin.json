@@ -1,7 +1,7 @@
 {
-  "name": "OpenSynth1 MPC Core",
+  "name": "Synth 1",
   "manufacturer": "Mimetiko",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "format": "vst2",
   "kind": "instrument",
   "uid": "MOS1",
@@ -10,6 +10,6 @@
   "category": "Synth",
   "file32": "VST/opensynth1-mpc-core-arm32.so",
   "file64": "VST/opensynth1-mpc-core-arm64.so",
-  "description": "Early partial OpenSynth1 DSP port for MPC One: source oscillator shape and ADSR mappings. Experimental; not full .sy1 compatible.",
+  "description": "Experimental MPC-native Synth 1 with OpenSynth1-derived waveforms; v0.2, not a complete Synth1 port.",
   "license": "MIT"
 }
