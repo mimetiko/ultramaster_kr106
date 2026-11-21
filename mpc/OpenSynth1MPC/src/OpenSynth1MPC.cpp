@@ -15,6 +15,7 @@
 #include "dsp/math.h"
 #include "dsp/lfo.h"
 #include "dsp/tempo.h"
+#include "Sy1Banks.h"
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -86,6 +87,10 @@ public:
         L1Shape,L1Rate,L1Sync,L1Div,L1Pitch,L1Filter,
         L2Shape,L2Rate,L2Sync,L2Div,L2PWM,L2Amp,
         ChorusRate,ChorusDepth,ChorusMix,DelayTime,DelayFB,DelayMix,Drive,
+        ArpOn, ArpMode, ArpOct, ArpBeat, ArpGate,
+        PlayMode, Porta, AutoPorta, KeyTrack, SubShape,
+        OscModOn, OscModAmt, OscModAttack, OscModDecay, OscModDest,
+        L1Dest,L2Dest, L1Depth,L2Depth,
         NumParams
     };
 
@@ -94,7 +99,7 @@ public:
         i.name="Synth 1";
         i.vendor="Mimetiko";
         i.uniqueId=MPC_FOURCC('M','O','S','1');
-        i.version=2000;
+        i.version=3000;
         i.isInstrument=true;
         i.numInputs=0; i.numOutputs=2;
         return i;
@@ -148,6 +153,26 @@ public:
         addParam(floatParam("dfb","Delay FB",0.f,85.f,28.f,"%",0));
         addParam(floatParam("dmix","Delay Mix",0.f,70.f,0.f,"%",0));
         addParam(floatParam("drive","Drive",0.f,100.f,0.f,"%",0));
+        // All new parameters are appended to keep v0.2 project state IDs stable.
+        addParam(boolParam("arpon","Arp On",false));
+        addParam(choiceParam("arpmode","Arp Mode",{"Up/Down","Up","Down","Random"},1));
+        addParam(choiceParam("arpoct","Arp Oct",{"1","2","3","4"},0));
+        addParam(choiceParam("arpbeat","Arp Beat",{"1/4","1/8","1/16","1/32","1/8T","1/16T"},2));
+        addParam(intParam("arpgate","Arp Gate",1,100,60,"%"));
+        addParam(choiceParam("playmode","Play Mode",{"Poly","Mono","Legato"},0));
+        addParam(floatParam("porta","Portamento",0.f,1500.f,0.f,"ms",0));
+        addParam(boolParam("autoporta","Auto Glide",false));
+        addParam(intParam("keytrk","Key Track",0,100,50,"%"));
+        addParam(choiceParam("subshape","Sub Wave",{"Sine","Triangle","Saw","Pulse"},3));
+        addParam(boolParam("modon","Mod Env On",false));
+        addParam(intParam("modamt","Mod Depth",0,127,64));
+        addParam(intParam("modatk","Mod Attack",0,127,0));
+        addParam(intParam("moddec","Mod Decay",0,127,0));
+        addParam(choiceParam("moddest","Mod Dest",{"Osc2","FM","PWM"},0));
+        addParam(choiceParam("l1dest","LFO1 Dest",{"Pitch","Osc2","Filter","Amp","PWM","FM"},2));
+        addParam(choiceParam("l2dest","LFO2 Dest",{"Pitch","Osc2","Filter","Amp","PWM","FM"},4));
+        addParam(intParam("l1depth","LFO1 Depth",0,127,0));
+        addParam(intParam("l2depth","LFO2 Depth",0,127,0));
 
         auto preset=[this](const char* name,std::initializer_list<std::pair<int,float>> overrides) {
             std::vector<float> v((size_t)numParams());
