@@ -8,11 +8,11 @@ script = lzma.decompress(base64.b64decode(
 )).decode("utf-8")
 # v4 CI source uses these stable helper names; normalize v5 anchors.
 script = script.replace(
-    "paintFaceplateGrain(g, { 10.f, 10.f, (float)kBaseWidth-20.f, (float)kBaseHeight-20.f },\\n                       1064, 390, 0.095f);\\n    paintSubtleEdgeWear(g, { 8.f, 8.f, (float)kBaseWidth-16.f, (float)kBaseHeight-16.f }, 106);",
-    "patina(g,{10.f,10.f,float(kBaseWidth)-20.f,float(kBaseHeight)-20.f},1064,390,0.09f);\\n    edgeWear(g,{8.f,8.f,float(kBaseWidth)-16.f,float(kBaseHeight)-16.f},106);")
+    "paintFaceplateGrain(g, { 10.f, 10.f, (float)kBaseWidth-20.f, (float)kBaseHeight-20.f },\n                       1064, 390, 0.095f);\n    paintSubtleEdgeWear(g, { 8.f, 8.f, (float)kBaseWidth-16.f, (float)kBaseHeight-16.f }, 106);",
+    "patina(g,{10.f,10.f,float(kBaseWidth)-20.f,float(kBaseHeight)-20.f},1064,390,0.09f);\n    edgeWear(g,{8.f,8.f,float(kBaseWidth)-16.f,float(kBaseHeight)-16.f},106);")
 script = script.replace(
-    "paintFaceplateGrain(g, r.reduced(3.f), (int)(r.getX()*17.f + r.getY()), 74, 0.095f);\\n    paintSubtleEdgeWear(g, r, (int)(r.getX()*13.f));",
-    "patina(g,r.reduced(3.f),uint32_t(r.getX()*17.f+r.getY()),72,0.09f);\\n    edgeWear(g,r,uint32_t(r.getX()*13.f));")
+    "paintFaceplateGrain(g, r.reduced(3.f), (int)(r.getX()*17.f + r.getY()), 74, 0.095f);\n    paintSubtleEdgeWear(g, r, (int)(r.getX()*13.f));",
+    "patina(g,r.reduced(3.f),uint32_t(r.getX()*17.f+r.getY()),72,0.09f);\n    edgeWear(g,r,uint32_t(r.getX()*13.f));")
 script = script.replace(
     "paintFaceplateGrain(g, {x+2.f,y+2.f,w-4.f,h-4.f}, (int)x*19, 90, 0.10f);",
     "patina(g,{x+2.f,y+2.f,w-4.f,h-4.f},uint32_t(x*19),84,0.09f);")
