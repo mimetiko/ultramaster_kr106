@@ -1,5 +1,84 @@
 {
+  "kit": "mono",
+  "qlinkGroups": "rows",
+  "style": {
+    "background": "ff1a1d22",
+    "text": "ffe4e4dc",
+    "muted": "ffa9adae",
+    "accent": "ffc4a86d"
+  },
   "pages": [
+    {
+      "name": "MAIN",
+      "controls": [
+        {
+          "param": "Cutoff",
+          "widget": "knob"
+        },
+        {
+          "param": "Resonance",
+          "widget": "knob"
+        },
+        {
+          "param": "Filter Env",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "Master",
+          "widget": "fader"
+        },
+        {
+          "param": "Osc 1",
+          "widget": "switch"
+        },
+        {
+          "param": "Osc 2",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "Osc Mix",
+          "widget": "fader"
+        },
+        {
+          "param": "Color/PW",
+          "widget": "knob"
+        },
+        {
+          "param": "A Attack",
+          "widget": "fader"
+        },
+        {
+          "param": "A Decay",
+          "widget": "fader"
+        },
+        {
+          "param": "A Sustain",
+          "widget": "fader"
+        },
+        {
+          "param": "A Release",
+          "widget": "fader"
+        },
+        {
+          "param": "Chorus Mix",
+          "widget": "fader"
+        },
+        {
+          "param": "Delay Mix",
+          "widget": "fader"
+        },
+        {
+          "param": "FM Depth",
+          "widget": "knob"
+        },
+        {
+          "param": "Sub Level",
+          "widget": "fader"
+        }
+      ]
+    },
     {
       "name": "OSC",
       "controls": [
@@ -14,7 +93,7 @@
         },
         {
           "param": "Osc Mix",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "Color/PW",
@@ -22,15 +101,17 @@
         },
         {
           "param": "Osc2 Semi",
-          "widget": "knob"
+          "widget": "knob",
+          "polarity": "bipolar"
         },
         {
           "param": "Osc2 Fine",
-          "widget": "knob"
+          "widget": "knob",
+          "polarity": "bipolar"
         },
         {
           "param": "Sub Level",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "Sub Oct",
@@ -50,12 +131,12 @@
         },
         {
           "param": "Master",
-          "widget": "knob"
+          "widget": "fader"
         }
       ]
     },
     {
-      "name": "FILTER",
+      "name": "FILT",
       "controls": [
         {
           "param": "Cutoff",
@@ -71,23 +152,24 @@
         },
         {
           "param": "Filter Env",
-          "widget": "knob"
+          "widget": "knob",
+          "polarity": "bipolar"
         },
         {
           "param": "F Attack",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "F Decay",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "F Sustain",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "F Release",
-          "widget": "knob"
+          "widget": "fader"
         }
       ]
     },
@@ -96,23 +178,23 @@
       "controls": [
         {
           "param": "A Attack",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "A Decay",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "A Sustain",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "A Release",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "Velocity",
-          "widget": "knob"
+          "widget": "fader"
         },
         {
           "param": "Bend Range",
@@ -120,7 +202,112 @@
         },
         {
           "param": "Master",
+          "widget": "fader"
+        },
+        "empty"
+      ]
+    },
+    {
+      "name": "LFO 1",
+      "controls": [
+        {
+          "param": "LFO1 Wave",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO1 Rate",
           "widget": "knob"
+        },
+        {
+          "param": "LFO1 Sync",
+          "widget": "switch"
+        },
+        {
+          "param": "LFO1 Div",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO1 Pitch",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO1 Filter",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "LFO 2",
+      "controls": [
+        {
+          "param": "LFO2 Wave",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO2 Rate",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO2 Sync",
+          "widget": "switch"
+        },
+        {
+          "param": "LFO2 Div",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO2 PWM",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO2 Amp",
+          "widget": "knob"
+        },
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "name": "FX",
+      "controls": [
+        {
+          "param": "Chorus Rate",
+          "widget": "knob"
+        },
+        {
+          "param": "Chorus Depth",
+          "widget": "knob"
+        },
+        {
+          "param": "Chorus Mix",
+          "widget": "fader"
+        },
+        {
+          "param": "Drive",
+          "widget": "knob"
+        },
+        {
+          "param": "Delay Time",
+          "widget": "knob"
+        },
+        {
+          "param": "Delay FB",
+          "widget": "knob"
+        },
+        {
+          "param": "Delay Mix",
+          "widget": "fader"
+        },
+        {
+          "param": "Master",
+          "widget": "fader"
         }
       ]
     }
