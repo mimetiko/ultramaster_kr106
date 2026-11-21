@@ -8,8 +8,8 @@
   "numInputs": 0,
   "numOutputs": 2,
   "category": "Synth",
-  "file32": "VST/opensynth1-mpc-core-arm32.so",
-  "file64": "VST/opensynth1-mpc-core-arm64.so",
+  "file32": "VST/synth-1-arm32.so",
+  "file64": "VST/synth-1-arm64.so",
   "description": "Experimental MPC-native Synth 1 with OpenSynth1-derived waveforms; v0.2, not a complete Synth1 port.",
   "license": "MIT"
 }
