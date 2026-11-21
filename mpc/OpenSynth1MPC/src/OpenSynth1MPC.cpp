@@ -489,21 +489,33 @@ private:
             v.amp.set(aa,ad,as,ar);
         }
     }
-    void release(int n) { voices_[n].amp.noteOff();voices_[n].filt.noteOff(); }
+    void release(int n) { voices_[n].amp.noteOff();voices_[n].filt.noteOff();voices_[n].modEnv.noteOff(); }
     void midi(const mpc::MidiEvent& ev) {
         if(ev.isNoteOn()){
-            int ix=alloc_.noteOn(ev.note(),ev.velocity());
-            Voice& v=voices_[ix];v.note=ev.note();
-            v.velocity=1.f-s_.vel+s_.vel*(ev.velocity()/127.f);
-            v.p1=v.p2=v.ps=0.f;v.ctrl=0;
-            v.filter.reset();v.amp.noteOn();v.filt.noteOn();
-        } else if(ev.isNoteOff()){
-            int ix=alloc_.noteOff(ev.note());if(ix>=0)release(ix);
-        } else if(ev.isAllNotesOff()){
-            alloc_.allNotesOff([this](int ix){release(ix);});
-        } else if(ev.isController() && ev.controller()==64){
-            alloc_.setSustain(ev.controllerValue()>=64,[this](int ix){release(ix);});
-        } else if(ev.isPitchBend()) alloc_.setPitchBend(ev.pitchBend());
+            if(s_.arpOn){
+                arpHeld_[(size_t)ev.note()]=(uint8_t)ev.velocity();
+                if(countHeld(arpHeld_)==1)arpCounter_=0;
+            }else if(s_.playMode!=0) monoNoteOn(ev.note(),ev.velocity());
+            else {
+                int ix=alloc_.noteOn(ev.note(),ev.velocity());
+                startVoice(ix,ev.note(),ev.velocity());
+            }
+        }else if(ev.isNoteOff()){
+            if(s_.arpOn){
+                arpHeld_[(size_t)ev.note()]=0;
+                if(countHeld(arpHeld_)==0&&arpCurrent_>=0){
+                    int ix=alloc_.noteOff(arpCurrent_);if(ix>=0)release(ix);
+                    arpCurrent_=-1;
+                }
+            }else if(s_.playMode!=0)monoNoteOff(ev.note());
+            else {int ix=alloc_.noteOff(ev.note());if(ix>=0)release(ix);}
+        }else if(ev.isAllNotesOff()){
+            arpHeld_.fill(0);monoHeld_.fill(0);releaseAll();
+        }else if(ev.isController() && ev.controller()==64){
+            if(!s_.arpOn&&s_.playMode==0)
+                alloc_.setSustain(ev.controllerValue()>=64,[this](int ix){release(ix);});
+        }else if(ev.isPitchBend())alloc_.setPitchBend(ev.pitchBend());
+        // CC1 is routed by the host when mapped, without audio-thread parameter writes.
     }
     void render(mpc::ProcessContext& ctx,int from,int to) {
         float* out=ctx.outputs[0];
