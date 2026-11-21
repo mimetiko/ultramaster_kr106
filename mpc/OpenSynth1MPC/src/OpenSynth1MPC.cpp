@@ -188,6 +188,78 @@ public:
         preset("Pulsing Drift",{{Osc1,2},{Osc2,2},{Color,38},{Cutoff,1650},{Reson,30},{L1Rate,1.2f},{L1Filter,38},{L2Rate,.17f},{L2PWM,70},{ChorusMix,24}});
         preset("Broken Glass",{{Osc1,1},{Osc2,1},{FM,27},{Semi2,9},{Cutoff,6000},{L1Rate,5.2f},{L1Pitch,.15f},{Drive,22},{DelayMix,18}});
         preset("Dust Echo",{{Osc1,3},{Osc2,1},{Fine2,8},{AAttack,45},{ARelease,78},{Cutoff,950},{L1Filter,21},{ChorusMix,27},{DelayMix,26}});
+        // Import original Synth1 / OpenSynth1 text presets from
+        // Content/SY1/<bank-folder>/*.sy1, before the host queries program count.
+        // These are *approximate* mappings where the MPC DSP differs.
+        loadSy1Programs();
+    }
+
+
+    // No filesystem access after the constructor; program values are cached
+    // in mpc::Plugin and saved by MPC projects through the SDK's state chunks.
+    void loadSy1Programs() {
+        const auto imported=sy1::load(mpc::contentPath("SY1"),384);
+        auto clampRaw=[](float x){return bounded(x,0.f,127.f);};
+        for(const auto& patch:imported) {
+            std::vector<float> v((size_t)numParams());
+            for(int i=0;i<numParams();++i)v[(size_t)i]=param(i).def;
+            auto has=[&](int id){return patch.present[(size_t)id];};
+            auto raw=[&](int id){return float(patch.value[(size_t)id]);};
+            auto put=[&](int id,int parameter,float translated){
+                if(has(id))v[(size_t)parameter]=bounded(translated,param(parameter).min,param(parameter).max);
+            };
+            auto pct=[&](int id){return clampRaw(raw(id))*100.f/127.f;};
+            auto shapeLfo=[](int n){switch(n){case 0:return 2;case 1:return 1;case 2:return 3;case 3:case 4:return 4;case 5:return 0;default:return 0;}};
+            put(0,Osc1,raw(0));put(1,Osc2,raw(1));
+            put(5,Mix,pct(5));put(8,Color,5.f+90.f*clampRaw(raw(8))/127.f);
+            // OpenSynth1 uses a non-linear 128-entry semitone table.
+            // Approximate its -60..+60 range within this engine's -24..+24.
+            put(2,Semi2,(raw(2)-64.f)*.94f);
+            put(3,Fine2,(raw(3)-64.f)*.96875f);
+            put(95,SubLevel,pct(95));put(97,SubOct,raw(97)>=1.f?0.f:1.f);
+            put(96,SubShape,raw(96));
+            put(45,FM,pct(45));put(7,Ring,raw(7));put(6,Sync,raw(6));
+            put(107,Master,-36.f+36.f*pct(107)/100.f);
+            put(19,Cutoff,15.f*std::pow(1066.66667f,clampRaw(raw(19))/127.f));
+            put(20,Reson,pct(20));
+            if(has(14)){int ft=(int)raw(14);put(14,FMode,ft==2?2.f:ft==3?1.f:0.f);}
+            // Filter amount in the source engine is bipolar around 63.
+            put(21,FEnvAmt,bounded((raw(21)-63.f)*100.f/64.f,-100.f,100.f));
+            put(22,KeyTrack,bounded(raw(22)*100.f/127.f,0.f,100.f));
+            put(23,Drive,pct(23));
+            put(15,FAttack,raw(15));put(16,FDecay,raw(16));
+            put(17,FSustain,raw(17));put(18,FRelease,raw(18));
+            put(25,AAttack,raw(25));put(26,ADecay,raw(26));
+            put(27,ASustain,raw(27));put(28,ARelease,raw(28));
+            put(30,Velocity,pct(30));put(40,Bend,raw(40));
+            put(10,OscModOn,raw(10));put(11,OscModAmt,raw(11));
+            put(12,OscModAttack,raw(12));put(13,OscModDecay,raw(13));
+            put(71,OscModDest,raw(71));
+            put(59,ArpOn,raw(59));
+            if(has(31))put(31,ArpMode,raw(31)>0?raw(31)-1:0);
+            put(32,ArpOct,raw(32));put(34,ArpGate,std::max(1.f,pct(34)));
+            // Original 19 beat divisions collapse to six musical divisions here.
+            if(has(33))put(33,ArpBeat,raw(33)<6?0.f:raw(33)<10?1.f:raw(33)<14?2.f:3.f);
+            put(38,PlayMode,raw(38));put(39,Porta,1500.f*std::pow(clampRaw(raw(39))/127.f,2.f));
+            put(74,AutoPorta,raw(74));
+            // Original shape order: saw, triangle, square, random, smooth-random, sine.
+            if(has(42))put(42,L1Shape,(float)shapeLfo((int)raw(42)));
+            if(has(47))put(47,L2Shape,(float)shapeLfo((int)raw(47)));
+            if(has(43))put(43,L1Rate,.05f*std::pow(600.f,clampRaw(raw(43))/127.f));
+            if(has(48))put(48,L2Rate,.05f*std::pow(600.f,clampRaw(raw(48))/127.f));
+            put(67,L1Sync,raw(67));put(69,L2Sync,raw(69));
+            put(44,L1Depth,raw(44));put(49,L2Depth,raw(49));
+            if(has(41))put(41,L1Dest,raw(41)>=1?raw(41)-1:0);
+            if(has(46))put(46,L2Dest,raw(46)>=1?raw(46)-1:0);
+            put(54,ChorusRate,.05f+5.95f*clampRaw(raw(54))/127.f);
+            put(53,ChorusDepth,pct(53));put(56,ChorusMix,pct(56)*.70f);
+            put(36,DelayFB,pct(36)*.85f);
+            put(37,DelayMix,pct(37)*.70f);
+            if(has(35))put(35,DelayTime,20.f+1180.f*std::min(19.f,raw(35))/19.f);
+            const std::string label=(patch.bank=="Loose"?"":patch.bank+": ")+patch.name;
+            addProgram(label.c_str(),std::move(v));
+        }
+        if(!imported.empty())mpc::log("Synth 1: imported %d SY1 programs",int(imported.size()));
     }
 
     void prepare(double sampleRate, int) override {
