@@ -196,12 +196,18 @@
           "param": "Drive",
           "widget": "knob"
         },
-        "empty",
-        "empty"
+        {
+          "param": "Mod Attack",
+          "widget": "knob"
+        },
+        {
+          "param": "Mod Decay",
+          "widget": "knob"
+        }
       ]
     },
     {
-      "name": "AMP",
+      "name": "PERF",
       "controls": [
         {
           "param": "A Attack",
@@ -219,139 +225,6 @@
           "param": "A Release",
           "widget": "fader"
         },
-        {
-          "param": "Velocity",
-          "widget": "fader"
-        },
-        {
-          "param": "Master",
-          "widget": "fader"
-        },
-        {
-          "param": "Bend Range",
-          "widget": "knob"
-        },
-        "empty"
-      ]
-    },
-    {
-      "name": "MOD",
-      "controls": [
-        {
-          "param": "Mod Env On",
-          "widget": "switch"
-        },
-        {
-          "param": "Mod Depth",
-          "widget": "knob"
-        },
-        {
-          "param": "Mod Attack",
-          "widget": "knob"
-        },
-        {
-          "param": "Mod Decay",
-          "widget": "knob"
-        },
-        {
-          "param": "Mod Dest",
-          "widget": "switch"
-        },
-        {
-          "param": "FM Depth",
-          "widget": "knob"
-        },
-        {
-          "param": "Color/PW",
-          "widget": "knob"
-        },
-        "empty"
-      ]
-    },
-    {
-      "name": "LFO 1",
-      "controls": [
-        {
-          "param": "LFO1 Wave",
-          "widget": "knob",
-          "overlay": "menu"
-        },
-        {
-          "param": "LFO1 Rate",
-          "widget": "knob"
-        },
-        {
-          "param": "LFO1 Sync",
-          "widget": "switch"
-        },
-        {
-          "param": "LFO1 Div",
-          "widget": "knob",
-          "overlay": "menu"
-        },
-        {
-          "param": "LFO1 Dest",
-          "widget": "knob",
-          "overlay": "menu"
-        },
-        {
-          "param": "LFO1 Depth",
-          "widget": "knob"
-        },
-        {
-          "param": "LFO1 Pitch",
-          "widget": "knob"
-        },
-        {
-          "param": "LFO1 Filter",
-          "widget": "knob",
-          "polarity": "bipolar"
-        }
-      ]
-    },
-    {
-      "name": "LFO 2",
-      "controls": [
-        {
-          "param": "LFO2 Wave",
-          "widget": "knob",
-          "overlay": "menu"
-        },
-        {
-          "param": "LFO2 Rate",
-          "widget": "knob"
-        },
-        {
-          "param": "LFO2 Sync",
-          "widget": "switch"
-        },
-        {
-          "param": "LFO2 Div",
-          "widget": "knob",
-          "overlay": "menu"
-        },
-        {
-          "param": "LFO2 Dest",
-          "widget": "knob",
-          "overlay": "menu"
-        },
-        {
-          "param": "LFO2 Depth",
-          "widget": "knob"
-        },
-        {
-          "param": "LFO2 PWM",
-          "widget": "knob"
-        },
-        {
-          "param": "LFO2 Amp",
-          "widget": "knob"
-        }
-      ]
-    },
-    {
-      "name": "PERF",
-      "controls": [
         {
           "param": "Play Mode",
           "widget": "switch"
@@ -391,14 +264,90 @@
           "widget": "knob"
         },
         {
-          "param": "Master",
-          "widget": "fader"
-        },
-        {
           "param": "Velocity",
           "widget": "fader"
         },
+        {
+          "param": "Master",
+          "widget": "fader"
+        },
         "empty"
+      ]
+    },
+    {
+      "name": "MOD",
+      "controls": [
+        {
+          "param": "LFO1 Wave",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO1 Rate",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO1 Sync",
+          "widget": "switch"
+        },
+        {
+          "param": "LFO1 Div",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO1 Dest",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO1 Depth",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO1 Pitch",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO1 Filter",
+          "widget": "knob",
+          "polarity": "bipolar"
+        },
+        {
+          "param": "LFO2 Wave",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO2 Rate",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO2 Sync",
+          "widget": "switch"
+        },
+        {
+          "param": "LFO2 Div",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO2 Dest",
+          "widget": "knob",
+          "overlay": "menu"
+        },
+        {
+          "param": "LFO2 Depth",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO2 PWM",
+          "widget": "knob"
+        },
+        {
+          "param": "LFO2 Amp",
+          "widget": "knob"
+        }
       ]
     },
     {
