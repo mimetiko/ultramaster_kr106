@@ -35,6 +35,9 @@ jobs:
           mkdir -p dist/'VST2 Plugins'
           cp -r 'sdk/plugins/OpenSynth1MPC/build/Mimetiko - VST - OpenSynth1 MPC Core' dist/'VST2 Plugins/'
           cp 'sdk/LICENSE' dist/LICENSE-MPC-SDK.txt
+          cp 'mpc/OpenSynth1MPC/LICENSE-OpenSynth1.txt' dist/LICENSE-OpenSynth1.txt
+          test -s 'dist/VST2 Plugins/Mimetiko - VST - OpenSynth1 MPC Core/Plugin Skins/TUI.json'
+          test -s 'dist/VST2 Plugins/Mimetiko - VST - OpenSynth1 MPC Core/Plugin Skins/Q-Links.json'
           cat > dist/INSTALL.txt <<'TXT'
           OpenSynth1 MPC Core 0.1 - experimental partial port
           1. Keep a backup of any current MPC projects.
