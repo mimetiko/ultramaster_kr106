@@ -23,6 +23,13 @@ juce_add_plugin(OpenSynth1
 )
 juce_generate_juce_header(OpenSynth1)
 
+# Physically shaded, reproducible 2x interface assets.
+juce_add_binary_data(Synth1PhysicalSkin SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../synth1-skin/synth1_knob.png
+    ${CMAKE_CURRENT_SOURCE_DIR}/../synth1-skin/synth1_fader.png
+    ${CMAKE_CURRENT_SOURCE_DIR}/../synth1-skin/synth1_grain.png
+)
+
 target_sources(OpenSynth1 PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginEditor.cpp
@@ -52,5 +59,6 @@ target_link_libraries(OpenSynth1 PRIVATE
     juce::juce_events
     juce::juce_core
     juce::juce_dsp
+    Synth1PhysicalSkin
     PUBLIC juce::juce_recommended_config_flags
 )
