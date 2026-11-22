@@ -52,26 +52,7 @@ static bool sExcludeMaskInit = []() {
   return true;
 }();
 
-// MIDI CC → EParams mapping (-1 = unmapped)
-static constexpr int kCCtoParam[128] = {
-  -1, -1, -1, kDcoLfo, -1, kPortaRate, -1, kMasterVol,  // CC 0-7
-  -1, kDcoSub, -1, kVcaLevel, kHpfFreq, kDcoNoise, -1, -1, // CC 8-15
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 16-23
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 24-31
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 32-39
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 40-47
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 48-55
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 56-63
-  -1, -1, -1, -1, -1, -1, kEnvS, kVcfRes,               // CC 64-71
-  kEnvR, kEnvA, kVcfFreq, kEnvD, kVcfEnv, kVcfLfo,      // CC 72-77
-  kVcfKbd, kDcoPwm, kLfoRate, kLfoDelay, kArpRate, -1,   // CC 78-83
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 84-91
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 92-99
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 100-107
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 108-115
-  -1, -1, -1, -1, -1, -1, -1, -1,                       // CC 116-123
-  -1, -1, -1, -1,                                        // CC 124-127
-};
+// No hardcoded CC-to-parameter table: incoming CCs are assigned via MIDI Learn only.
 
 // Roland Juno-106 SysEx control → EParams mapping (0x00–0x0F)
 static constexpr int kSysExToParam[16] = {
@@ -80,16 +61,6 @@ static constexpr int kSysExToParam[16] = {
   kVcfLfo, kVcfKbd, kVcaLevel, kEnvA,       // 0x08-0x0B
   kEnvD, kEnvS, kEnvR, kDcoSub,             // 0x0C-0x0F
 };
-
-// Reverse mapping: EParams → MIDI CC (-1 = no CC for this param)
-static int sParamToCC[kNumParams] = {};
-static bool sParamToCCInit = []() {
-  for (int i = 0; i < kNumParams; i++) sParamToCC[i] = -1;
-  for (int cc = 0; cc < 128; cc++)
-    if (kCCtoParam[cc] >= 0)
-      sParamToCC[kCCtoParam[cc]] = cc;
-  return true;
-}();
 
 // Reverse mapping: EParams → SysEx control (-1 = not a continuous SysEx param)
 static int sParamToSysEx[kNumParams] = {};
@@ -686,19 +657,7 @@ void KR106AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             }
           }
         }
-        else
-        {
-          // CC mode: standard MIDI CC for param changes
-          int cc = sParamToCC[i];
-          if (cc >= 0)
-          {
-            int ccVal = (i == kHpfFreq)
-                ? juce::roundToInt(cur) * 32  // 0-3 -> 0/32/64/96
-                : juce::roundToInt(cur * ((i == kDcoPwm && mDSP.mSynthModel == kr106::kJ106) ? 105.f : 127.f));
-            midiOut.addEvent(juce::MidiMessage::controllerEvent(1, cc,
-                juce::jlimit(0, 127, ccVal)), 0);
-          }
-        }
+
       }
     }
   }
@@ -815,50 +774,12 @@ void KR106AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
           userHandled = true;
         }
       }
-      // Hardcoded mappings: sustain pedal, mod wheel, and CC→param table.
-      // Skip the hardcoded map if the target param has a user MIDI learn assignment
-      // (the user assignment replaces the default for that param).
-      if (cc == 120 || cc == 123) // All Sound Off / All Notes Off
+      // MIDI Learn is the only CC-to-parameter mapping. Preserve standard
+      // panic commands when they are not deliberately mapped to a control.
+      if (!userHandled && (cc == 120 || cc == 123))
       {
         mDSP.AllNotesOff();
         mKeyboardHeld.reset();
-      }
-      else if (cc == 64) // sustain pedal -> Hold
-      {
-        bool pedalDown = msg.getControllerValue() >= 64;
-        mParams[kHold]->setValueNotifyingHost(pedalDown ? 1.0f : 0.0f);
-      }
-      else if (cc == 65) // portamento on/off
-      {
-        bool on = msg.getControllerValue() >= 64;
-        float mode = on ? 1.0f : 0.0f; // 0=off, 1=on
-        mParams[kPortaMode]->setValueNotifyingHost(
-            mParams[kPortaMode]->convertTo0to1(mode));
-      }
-      else if (cc == 1)
-      {
-        mDSP.ControlChange(1, msg.getControllerValue() / 127.f);
-        mLfoTriggered.store(msg.getControllerValue() > 0, std::memory_order_relaxed);
-      }
-      else if (kCCtoParam[cc] >= 0)
-      {
-        int param = kCCtoParam[cc];
-        if (mParamCC[param] >= 0) {} // param has user assignment — skip default
-        else if (param == kHpfFreq)
-        {
-          int hpf = msg.getControllerValue() / 32; // 0-31→0, 32-63→1, 64-95→2, 96-127→3
-          if (hpf > 3) hpf = 3;
-          mParams[param]->setValueNotifyingHost(mParams[param]->convertTo0to1(static_cast<float>(hpf)));
-        }
-        else {
-          int val = msg.getControllerValue();
-          // J106: R5/R6 limit PWM slider to byte 105
-          if (param == kDcoPwm && mDSP.mSynthModel == kr106::kJ106) {
-            val = juce::jmin(val, 105);
-            mParams[param]->setValueNotifyingHost(val / 105.f);
-          } else
-            mParams[param]->setValueNotifyingHost(val / 127.f);
-        }
       }
     }
     else if (msg.isPitchWheel())
@@ -951,8 +872,9 @@ void KR106AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     {
       mDSP.ControlChange(evt.data1, evt.data2 / 127.f);
     }
-    // Echo to MIDI output
-    midiOut.addEvent(juce::MidiMessage(evt.status, evt.data1, evt.data2), 0);
+    // Echo virtual keyboard notes, but never emit CCs automatically.
+    if ((evt.status & 0xF0) == 0x80 || (evt.status & 0xF0) == 0x90)
+      midiOut.addEvent(juce::MidiMessage(evt.status, evt.data1, evt.data2), 0);
     mUIMidiTail.store((tail + 1) % kUIMidiQueueSize, std::memory_order_release);
   }
 
@@ -1722,12 +1644,9 @@ void KR106AudioProcessor::clearMidiLearn(int paramIdx)
 
 int KR106AudioProcessor::getCCForParam(int paramIdx) const
 {
-  // User map takes priority
-  if (paramIdx >= 0 && paramIdx < kNumParams && mParamCC[paramIdx] >= 0)
+  // Show only explicit user MIDI Learn assignments; no factory fallback.
+  if (paramIdx >= 0 && paramIdx < kNumParams)
     return mParamCC[paramIdx];
-  // Fall back to hardcoded map
-  for (int cc = 0; cc < 128; cc++)
-    if (kCCtoParam[cc] == paramIdx) return cc;
   return -1;
 }
 
