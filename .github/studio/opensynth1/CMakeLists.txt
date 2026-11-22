@@ -7,9 +7,9 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../JUCE" "${CMAKE_BINARY_DIR}/JUCE
 
 juce_add_plugin(OpenSynth1
     COMPANY_NAME "Mimetiko"
-    BUNDLE_ID "org.opensynth1.OpenSynth1"
-    PLUGIN_MANUFACTURER_CODE OpSn
-    PLUGIN_CODE OpS1
+    BUNDLE_ID "org.mimetiko.Synth1"
+    PLUGIN_MANUFACTURER_CODE Mmtk
+    PLUGIN_CODE MtS1
     PRODUCT_NAME "Mimetiko Synth 1"
     VERSION "1.2.1"
     FORMATS VST3 Standalone
