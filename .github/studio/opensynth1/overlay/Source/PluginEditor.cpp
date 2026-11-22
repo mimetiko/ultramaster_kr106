@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "BinaryData.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -169,6 +170,20 @@ void drawChassis(juce::Graphics& g,bool details) {
     g.fillRoundedRectangle(26,35,W-52,H-46,18.f);
     setMetalGradient(g,Colour(0xffdb3640),Colour(0xff751822),29.f,31.f,float(H-66));
     g.fillRoundedRectangle(29,29,W-58,H-45,17.f);
+    // A high-resolution anodised material pass, rendered from the same
+    // reproducible texture as the physical controls; baked into cached skins.
+    {
+        static const juce::Image surface = juce::ImageCache::getFromMemory(
+            BinaryData::synth1_grain_png,BinaryData::synth1_grain_pngSize);
+        if(surface.isValid()) {
+            g.saveState();
+            g.reduceClipRegion(juce::Rectangle<int>(30,30,W-60,H-47));
+            for(int ty=30;ty<H-28;ty+=surface.getHeight())
+                for(int tx=30;tx<W-30;tx+=surface.getWidth())
+                    g.drawImageAt(surface,tx,ty);
+            g.restoreState();
+        }
+    }
     // Micro-striations mimic brushed anodised aluminium rather than flat vectors.
     uint32_t seed=0x746d6531u;
     for(int i=0;i<2600;++i) {
@@ -242,7 +257,12 @@ void drawChassis(juce::Graphics& g,bool details) {
 }
 class HardwareLook final : public juce::LookAndFeel_V4 {
 public:
+    juce::Image knobSkin, faderSkin;
     HardwareLook() {
+        knobSkin = juce::ImageCache::getFromMemory(BinaryData::synth1_knob_png,
+                                                  BinaryData::synth1_knob_pngSize);
+        faderSkin = juce::ImageCache::getFromMemory(BinaryData::synth1_fader_png,
+                                                   BinaryData::synth1_fader_pngSize);
         setColour(juce::Label::textColourId,kPale);
         setColour(juce::ComboBox::backgroundColourId,Colour(0xff111215));
         setColour(juce::ComboBox::textColourId,kPale);
@@ -255,60 +275,66 @@ public:
         setColour(juce::TextButton::textColourOnId,kPale);
     }
     void drawRotarySlider(juce::Graphics& g,int x,int y,int width,int height,float pos,float start,float end,juce::Slider&) override {
-        const float r=std::min(width,height)*.38f;
+        // Real shaded 256px metallic cap, scaled to each control's original hitbox.
+        // JUCE keeps all APVTS attachments / mouse interaction and adds moving dial marks.
+        const float size=std::min(width,height)*.83f;
         const float cx=x+width*.5f, cy=y+height*.5f;
-        const float a=start+pos*(end-start)-juce::MathConstants<float>::halfPi;
-        // 11 stamped scale marks around the anodised knob well.
+        const float radius=size*.40f;
+        if(knobSkin.isValid())
+            g.drawImageWithin(knobSkin,juce::roundToInt(cx-size*.5f),juce::roundToInt(cy-size*.5f),
+                              juce::roundToInt(size),juce::roundToInt(size),
+                              juce::RectanglePlacement::stretchToFit);
+        else {
+            g.setColour(Colour(0xff34363a));
+            g.fillEllipse(cx-radius,cy-radius,radius*2.f,radius*2.f);
+        }
+        const float startAngle=start-juce::MathConstants<float>::halfPi;
+        const float endAngle=end-juce::MathConstants<float>::halfPi;
+        const float a=startAngle+pos*(endAngle-startAngle);
         for(int i=0;i<11;++i) {
-            const float t=start+(end-start)*float(i)/10.f-juce::MathConstants<float>::halfPi;
-            g.setColour(Colour(0xffb7b4b2).withAlpha(.73f));
-            g.drawLine(cx+std::cos(t)*r*1.21f,cy+std::sin(t)*r*1.21f,
-                       cx+std::cos(t)*r*1.33f,cy+std::sin(t)*r*1.33f,.9f);
+            const float t=startAngle+(endAngle-startAngle)*float(i)/10.f;
+            g.setColour(Colour(0xffc6bcbc).withAlpha(.72f));
+            g.drawLine(cx+std::cos(t)*radius*1.13f,cy+std::sin(t)*radius*1.13f,
+                       cx+std::cos(t)*radius*1.32f,cy+std::sin(t)*radius*1.32f,
+                       std::max(.8f,size*.013f));
         }
-        g.setColour(Colour(0xff070709).withAlpha(.85f));
-        g.fillEllipse(cx-r-5,cy-r+4,2*r+10,2*r+10);
-        g.setColour(Colour(0xff6a151c));
-        g.fillEllipse(cx-r-2,cy-r-2,2*r+4,2*r+4);
-        setMetalGradient(g,Colour(0xffc6c9cb),Colour(0xff292a2e),cx,cy-r,2*r);
-        g.fillEllipse(cx-r,cy-r,2*r,2*r);
-        g.setColour(Colour(0xff111215));g.drawEllipse(cx-r,cy-r,2*r,2*r,2.f);
-        const float ri=r*.8f;
-        setMetalGradient(g,Colour(0xfff3f2ed),Colour(0xff55575c),cx,cy-ri,ri*2);
-        g.fillEllipse(cx-ri,cy-ri,2*ri,2*ri);
-        g.setColour(Colour(0xff9ea0a2).withAlpha(.25f));
-        for(int q=0;q<13;++q) {
-            float yy=cy-ri+float(q)*2*ri/13.f;
-            float dx=std::sqrt(std::max(0.f,ri*ri-(yy-cy)*(yy-cy)));
-            g.drawHorizontalLine(juce::roundToInt(yy),cx-dx*.8f,cx+dx*.8f);
-        }
-        g.setColour(kRedBright);
-        juce::Path arc;
-        arc.addCentredArc(cx,cy,r+3,r+3,0,start,start+pos*(end-start),true);
-        g.strokePath(arc,juce::PathStrokeType(std::max(1.5f,r*.07f)));
-        g.setColour(Colour(0xffeae7e3));
-        g.drawLine(cx+std::cos(a)*ri*.34f,cy+std::sin(a)*ri*.34f,
-                   cx+std::cos(a)*ri*.91f,cy+std::sin(a)*ri*.91f,
-                   std::max(1.3f,r*.07f));
+        // Pointer is live JUCE drawing over a stationary raster cap.
+        const float px=std::cos(a), py=std::sin(a);
+        g.setColour(Colour(0xff050609).withAlpha(.75f));
+        g.drawLine(cx+px*radius*.22f+1.0f,cy+py*radius*.22f+1.0f,
+                   cx+px*radius*.83f+1.0f,cy+py*radius*.83f+1.0f,
+                   std::max(2.f,size*.065f));
+        g.setColour(Colour(0xfff0eee8));
+        g.drawLine(cx+px*radius*.20f,cy+py*radius*.20f,
+                   cx+px*radius*.81f,cy+py*radius*.81f,
+                   std::max(1.2f,size*.047f));
     }
     void drawLinearSlider(juce::Graphics& g,int x,int y,int width,int height,float sliderPos,
                           float,float,juce::Slider::SliderStyle style,juce::Slider&) override {
         if(style!=juce::Slider::LinearVertical) return;
         const float cx=x+width*.5f;
-        g.setColour(Colour(0xff0b0c0e));g.fillRoundedRectangle(cx-4,float(y+8),8.f,float(height-16),3.f);
-        g.setColour(Colour(0xff8b2d32));g.fillRoundedRectangle(cx-2,sliderPos,4.f,float(y+height-11)-sliderPos,2.f);
+        g.setColour(Colour(0xff050608));
+        g.fillRoundedRectangle(cx-4.f,float(y+8),8.f,float(height-16),3.f);
+        g.setColour(Colour(0xff805e62).withAlpha(.7f));
+        g.drawLine(cx-1.5f,float(y+10),cx-1.5f,float(y+height-10),.65f);
         for(int i=0;i<15;++i) {
             const float yy=y+9+float(i)*(height-18)/14.f;
-            g.setColour(Colour(0xffb4b5b6).withAlpha(.5f));
-            g.drawLine(cx-19,yy,cx-12,yy,1.f);
-            g.drawLine(cx+12,yy,cx+19,yy,1.f);
+            g.setColour(Colour(0xffd4cbcc).withAlpha(i%2==0?.62f:.30f));
+            g.drawLine(cx-19,yy,cx-12,yy,.95f);
+            g.drawLine(cx+12,yy,cx+19,yy,.95f);
         }
-        const float capW=32.f,capH=18.f;
-        g.setColour(Colour(0xff020304).withAlpha(.8f));
-        g.fillRoundedRectangle(cx-capW*.5f+2,sliderPos-capH*.5f+3,capW,capH,2.f);
-        setMetalGradient(g,Colour(0xfff3f3f2),Colour(0xff68696c),cx,sliderPos-capH*.5f,capH);
-        g.fillRoundedRectangle(cx-capW*.5f,sliderPos-capH*.5f,capW,capH,2.f);
-        g.setColour(Colour(0xff28292b));g.drawRoundedRectangle(cx-capW*.5f,sliderPos-capH*.5f,capW,capH,2.f,1.f);
-        g.setColour(Colour(0xff444446));g.drawLine(cx-capW*.43f,sliderPos,cx+capW*.43f,sliderPos,1.4f);
+        // The control uses a real raster cap, translated at each parameter value.
+        const float capW=std::min(44.f,float(width)-3.f);
+        const float capH=capW*.54f;
+        if(faderSkin.isValid())
+            g.drawImageWithin(faderSkin,juce::roundToInt(cx-capW*.5f),
+                              juce::roundToInt(sliderPos-capH*.5f),
+                              juce::roundToInt(capW),juce::roundToInt(capH),
+                              juce::RectanglePlacement::stretchToFit);
+        else {
+            g.setColour(Colour(0xffa3a3a7));
+            g.fillRoundedRectangle(cx-capW*.5f,sliderPos-capH*.5f,capW,capH,3.f);
+        }
     }
     void drawButtonBackground(juce::Graphics& g,juce::Button& button,const Colour&,bool hovered,bool down) override {
         // The preset LCD is already recessed into the background image.
