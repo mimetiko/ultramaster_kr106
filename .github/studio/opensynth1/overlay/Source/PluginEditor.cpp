@@ -38,8 +38,10 @@ struct MimetikoLook final : juce::LookAndFeel_V4 {
         g.setColour(cream);
         g.drawLine(c.x+std::cos(a)*radius*.28f,c.y+std::sin(a)*radius*.28f,
                    c.x+std::cos(a)*radius*.84f,c.y+std::sin(a)*radius*.84f,2.5f);
-        g.setColour(redLit); g.drawArc(c.x-radius-5,c.y-radius-5,(radius+5)*2,(radius+5)*2,
-                                       start,end,1.2f);
+        g.setColour(redLit);
+        juce::Path arc;
+        arc.addCentredArc(c.x,c.y,radius+5,radius+5,0.f,start,end,true);
+        g.strokePath(arc,juce::PathStrokeType(1.2f));
     }
     void drawToggleButton(juce::Graphics& g,juce::ToggleButton& b,bool,bool) override {
         auto r=b.getLocalBounds().reduced(2).toFloat();
@@ -197,9 +199,9 @@ public:
             g.drawText(panel.title,panel.x+13,panel.y+5,panel.w-20,21,juce::Justification::centredLeft);
             g.setColour(redLit);g.fillRect(panel.x+11,panel.y+28,juce::jmin(92,panel.w-22),2);
         }
-        g.setColour(juce::Colour(0xffaeb1ad));g.setFont(juce::Font(juce::FontOptions(10.f)));
-        g.drawText("MIMETIKO  /  ONE PAGE SOUND DESIGN",23,986,350,11,juce::Justification::centredLeft);
+        // Preset display and section controls all occupy the available front panel.
     }
+public:
     void syncPreset() {
         presetDisplay.setButtonText(juce::String::formatted("%03d  /  ",processor.getCurrentProgramNumber())
                                          +processor.getCurrentProgramName().toUpperCase());
@@ -294,8 +296,9 @@ private:
             save?"Save Synth1 patch":"Load Synth1 patch",
             processor.getBankDirectory(), "*.sy1");
         auto safe=juce::Component::SafePointer<MimetikoSynthCanvas>(this);
-        chooser->launchAsync(save?juce::FileBrowserComponent::saveMode:
-                                  juce::FileBrowserComponent::openMode,
+        chooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                              (save?juce::FileBrowserComponent::saveMode:
+                                    juce::FileBrowserComponent::openMode),
             [safe,save](const juce::FileChooser& fc) {
                 if(!safe)return;
                 auto f=fc.getResult();
