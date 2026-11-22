@@ -82,38 +82,38 @@ const std::vector<Spec> specs = {
   {"93", "VOICES", Kind::Knob, Page::Main, 1340,640,56,56},
   {"75", "DETUNE", Kind::Knob, Page::Main, 1413,640,56,56},
   {"84", "SPREAD", Kind::Knob, Page::Main, 1488,640,56,56},
-  {"59", "ON", Kind::Toggle, Page::Main, 55,801,66,26},
-  {"31", "MODE", Kind::Choice, Page::Main, 132,801,114,28},
-  {"32", "RANGE", Kind::Choice, Page::Main, 257,801,90,28},
-  {"33", "RATE", Kind::Knob, Page::Main, 356,784,64,64},
-  {"34", "GATE", Kind::Knob, Page::Main, 431,784,64,64},
-  {"29", "AMP GAIN", Kind::Knob, Page::Main, 1276,790,66,66},
-  {"30", "AMP VEL", Kind::Knob, Page::Main, 1366,790,66,66},
-  {"107", "MASTER VOLUME", Kind::Knob, Page::Main, 1477,767,113,113},
-  {"66", "ON", Kind::Toggle, Page::Chorus, 548,838,72,25},
-  {"64", "TYPE", Kind::Choice, Page::Chorus, 634,834,124,27},
-  {"52", "TIME", Kind::Knob, Page::Chorus, 771,815,57,57},
-  {"53", "DEPTH", Kind::Knob, Page::Chorus, 855,815,57,57},
-  {"54", "RATE", Kind::Knob, Page::Chorus, 939,815,57,57},
-  {"55", "FEEDBACK", Kind::Knob, Page::Chorus, 1023,815,57,57},
-  {"56", "LEVEL", Kind::Knob, Page::Chorus, 1110,815,57,57},
-  {"65", "ON", Kind::Toggle, Page::Delay, 548,838,72,25},
-  {"82", "TYPE", Kind::Choice, Page::Delay, 634,834,124,27},
-  {"35", "TIME", Kind::Knob, Page::Delay, 771,815,57,57},
-  {"83", "SPREAD", Kind::Knob, Page::Delay, 855,815,57,57},
-  {"36", "FEEDBACK", Kind::Knob, Page::Delay, 939,815,57,57},
-  {"98", "TONE", Kind::Knob, Page::Delay, 1023,815,57,57},
-  {"37", "MIX", Kind::Knob, Page::Delay, 1110,815,57,57},
-  {"77", "ON", Kind::Toggle, Page::Multi, 560,838,75,25},
-  {"78", "TYPE", Kind::Choice, Page::Multi, 659,834,150,27},
-  {"79", "CONTROL 1", Kind::Knob, Page::Multi, 836,811,63,63},
-  {"80", "CONTROL 2", Kind::Knob, Page::Multi, 950,811,63,63},
-  {"81", "LEVEL", Kind::Knob, Page::Multi, 1067,811,63,63},
-  {"60", "TONE", Kind::Knob, Page::Eq, 644,815,60,60},
-  {"61", "FREQ", Kind::Knob, Page::Eq, 751,815,60,60},
-  {"62", "LEVEL", Kind::Knob, Page::Eq, 858,815,60,60},
-  {"63", "Q", Kind::Knob, Page::Eq, 965,815,60,60},
-  {"90", "PAN", Kind::Knob, Page::Eq, 1072,815,60,60},
+  {"59", "ON", Kind::Toggle, Page::Main, 55,795,66,26},
+  {"31", "MODE", Kind::Choice, Page::Main, 132,795,114,28},
+  {"32", "RANGE", Kind::Choice, Page::Main, 257,795,90,28},
+  {"33", "RATE", Kind::Knob, Page::Main, 356,776,64,64},
+  {"34", "GATE", Kind::Knob, Page::Main, 431,776,64,64},
+  {"29", "AMP GAIN", Kind::Knob, Page::Main, 1276,780,66,66},
+  {"30", "AMP VEL", Kind::Knob, Page::Main, 1366,780,66,66},
+  {"107", "MASTER VOLUME", Kind::Knob, Page::Main, 1460,767,104,91},
+  {"66", "ON", Kind::Toggle, Page::Chorus, 548,826,72,25},
+  {"64", "TYPE", Kind::Choice, Page::Chorus, 634,822,124,27},
+  {"52", "TIME", Kind::Knob, Page::Chorus, 771,801,57,57},
+  {"53", "DEPTH", Kind::Knob, Page::Chorus, 855,801,57,57},
+  {"54", "RATE", Kind::Knob, Page::Chorus, 939,801,57,57},
+  {"55", "FEEDBACK", Kind::Knob, Page::Chorus, 1023,801,57,57},
+  {"56", "LEVEL", Kind::Knob, Page::Chorus, 1110,801,57,57},
+  {"65", "ON", Kind::Toggle, Page::Delay, 548,826,72,25},
+  {"82", "TYPE", Kind::Choice, Page::Delay, 634,822,124,27},
+  {"35", "TIME", Kind::Knob, Page::Delay, 771,801,57,57},
+  {"83", "SPREAD", Kind::Knob, Page::Delay, 855,801,57,57},
+  {"36", "FEEDBACK", Kind::Knob, Page::Delay, 939,801,57,57},
+  {"98", "TONE", Kind::Knob, Page::Delay, 1023,801,57,57},
+  {"37", "MIX", Kind::Knob, Page::Delay, 1110,801,57,57},
+  {"77", "ON", Kind::Toggle, Page::Multi, 560,826,75,25},
+  {"78", "TYPE", Kind::Choice, Page::Multi, 659,822,150,27},
+  {"79", "CONTROL 1", Kind::Knob, Page::Multi, 836,799,63,63},
+  {"80", "CONTROL 2", Kind::Knob, Page::Multi, 950,799,63,63},
+  {"81", "LEVEL", Kind::Knob, Page::Multi, 1067,799,63,63},
+  {"60", "TONE", Kind::Knob, Page::Eq, 644,801,60,60},
+  {"61", "FREQ", Kind::Knob, Page::Eq, 751,801,60,60},
+  {"62", "LEVEL", Kind::Knob, Page::Eq, 858,801,60,60},
+  {"63", "Q", Kind::Knob, Page::Eq, 965,801,60,60},
+  {"90", "PAN", Kind::Knob, Page::Eq, 1072,801,60,60},
   {"10", "ON", Kind::Toggle, Page::Advanced, 94,287,72,26},
   {"11", "AMOUNT", Kind::Knob, Page::Advanced, 183,257,82,82},
   {"12", "ATTACK", Kind::Knob, Page::Advanced, 296,257,82,82},
@@ -166,9 +166,9 @@ void drawPanel(juce::Graphics& g, int x,int y,int w,int h,const char* title) {
 void drawChassis(juce::Graphics& g,bool details) {
     g.fillAll(Colour(0xff101015));
     g.setColour(Colour(0xff050405).withAlpha(.82f));
-    g.fillRoundedRectangle(26,35,W-52,H-57,18.f);
+    g.fillRoundedRectangle(26,35,W-52,H-46,18.f);
     setMetalGradient(g,Colour(0xffdb3640),Colour(0xff751822),29.f,31.f,float(H-66));
-    g.fillRoundedRectangle(29,29,W-58,H-65,17.f);
+    g.fillRoundedRectangle(29,29,W-58,H-45,17.f);
     // Micro-striations mimic brushed anodised aluminium rather than flat vectors.
     uint32_t seed=0x746d6531u;
     for(int i=0;i<2600;++i) {
@@ -181,7 +181,7 @@ void drawChassis(juce::Graphics& g,bool details) {
         g.drawHorizontalLine(y,float(x),float(std::min(1607,x+5+int((seed>>8)&85u))));
     }
     g.setColour(Colour(0xfff7777f).withAlpha(.7f));
-    g.drawRoundedRectangle(31,30,W-62,H-68,16.f,1.f);
+    g.drawRoundedRectangle(31,30,W-62,H-48,16.f,1.f);
     g.setColour(Colour(0xff41131b));
     g.drawLine(38.f,145.f,1603.f,145.f,2.f);
     g.setColour(Colour(0xff9d9ea0));
@@ -217,9 +217,9 @@ void drawChassis(juce::Graphics& g,bool details) {
         drawPanel(g,36,599,503,125,"LFO 1");
         drawPanel(g,547,599,503,125,"LFO 2");
         drawPanel(g,1059,599,545,125,"VOICE / UNISON");
-        drawPanel(g,36,734,485,157,"ARPEGGIATOR");
-        drawPanel(g,529,734,704,157,"EFFECTS");
-        drawPanel(g,1241,734,363,157,"MASTER");
+        drawPanel(g,36,730,485,162,"ARPEGGIATOR");
+        drawPanel(g,529,730,704,162,"EFFECTS");
+        drawPanel(g,1241,730,363,162,"MASTER");
         // Horizontal rulers keep the envelope banks reminiscent of the reference hardware.
         g.setColour(Colour(0xff8d8788).withAlpha(.18f));
         for(int y=258;y<=496;y+=23) {
@@ -424,7 +424,7 @@ public:
         for(int i=0;i<4;++i) {
             auto b=std::make_unique<juce::TextButton>();
             b->setButtonText(names[i]);
-            b->setBounds(550+i*126,768,118,27);
+            b->setBounds(550+i*126,766,118,27);
             b->onClick=[this,i]{activeFx=static_cast<Page>(int(Page::Chorus)+i);updateVisibility();};
             addAndMakeVisible(*b);
             fxButtons.push_back(std::move(b));
