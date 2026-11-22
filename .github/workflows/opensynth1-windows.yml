@@ -37,6 +37,9 @@ jobs:
         run: |
           git clone --depth 1 --branch 9.0.1 https://github.com/juce-framework/JUCE.git JUCE
 
+      - name: Generate high-resolution physical interface skins
+        run: python .github/studio/opensynth1/generate_skin_assets.py synth1-skin
+
       - name: Configure Visual Studio x64
         run: cmake -S opensynth1-src -B opensynth1-build -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
 
