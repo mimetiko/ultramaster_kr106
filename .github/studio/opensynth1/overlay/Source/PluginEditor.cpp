@@ -189,15 +189,18 @@ void drawChassis(juce::Graphics& g,bool details) {
     g.drawText("Mimetiko Synth 1",79,64,460,50,juce::Justification::centredLeft);
     g.setColour(Colour(0xfff9cccc).withAlpha(.85f));
     g.drawLine(80.f,118.f,502.f,118.f,1.f);
-    // Preset LCD glass and its recessed, anodised metal surround.
-    g.setColour(Colour(0xff110709));g.fillRoundedRectangle(574,52,451,71,9.f);
-    setMetalGradient(g,Colour(0xff320e13),Colour(0xff110f11),587,59,54);
-    g.fillRoundedRectangle(584,59,429,57,6.f);
-    g.setColour(Colour(0xffd56a72).withAlpha(.5f));
-    g.drawRoundedRectangle(584,59,429,57,6.f,1.f);
+    // ONE recessed LCD, shared by both navigation hit areas and the preset name.
+    // Previous versions drew two separate rounded "windows" and placed the
+    // left navigation button outside the LCD, giving a visibly broken layout.
+    setMetalGradient(g,Colour(0xff230b11),Colour(0xff100c0e),575.f,53.f,70.f);
+    g.fillRoundedRectangle(575.f,53.f,450.f,70.f,7.f);
+    g.setColour(Colour(0xffef6870).withAlpha(.63f));
+    g.drawRoundedRectangle(575.f,53.f,450.f,70.f,7.f,1.f);
+    g.setColour(Colour(0xff5a252d).withAlpha(.75f));
+    g.drawLine(582.f,59.f,1017.f,59.f,.8f);
     g.setColour(Colour(0xfff8abab));
     g.setFont(juce::Font(juce::FontOptions(10.f).withStyle("Bold")));
-    g.drawText("PRESET",597,61,395,13,juce::Justification::centred);
+    g.drawText("PRESET",631,61,336,13,juce::Justification::centred);
     g.setColour(Colour(0xfff8d7d3));
     g.setFont(juce::Font(juce::FontOptions(12.f)));
     g.drawText("RIGHT-CLICK KNOB / SWITCH: MIDI LEARN",1060,122,495,20,juce::Justification::centredRight);
@@ -311,7 +314,7 @@ public:
         // The preset LCD is already recessed into the background image.
         // JUCE's standard button background placed a second grey, raised
         // "window" inside the glass; leave it transparent instead.
-        if(button.getName()=="MIMETIKO_LCD") return;
+        if(button.getName().startsWith("MIMETIKO_LCD")) return;
         auto r=button.getLocalBounds().toFloat().reduced(1.f);
         g.setColour(Colour(0xff060709));g.fillRoundedRectangle(r.translated(0,2),4.f);
         const bool on=button.getToggleState();
@@ -323,6 +326,22 @@ public:
     }
     void drawButtonText(juce::Graphics& g,juce::TextButton& button,
                         bool shouldDrawButtonAsHighlighted,bool shouldDrawButtonAsDown) override {
+        if(button.getName().startsWith("MIMETIKO_LCD_NAV")) {
+            // Navigation arrows are engraved INSIDE the LCD, not raised
+            // JUCE buttons floating beyond its bezel.
+            const auto r=button.getLocalBounds().toFloat();
+            const auto centre=r.getCentre();
+            const bool previous=button.getName().endsWith("_PREV");
+            const float dir=previous?-1.f:1.f;
+            juce::Path triangle;
+            triangle.addTriangle(centre.x+dir*5.f,centre.y,
+                                 centre.x-dir*4.f,centre.y-6.f,
+                                 centre.x-dir*4.f,centre.y+6.f);
+            g.setColour(shouldDrawButtonAsDown?Colour(0xffffdddd):
+                        shouldDrawButtonAsHighlighted?Colour(0xffffb5ac):Colour(0xffed7c82));
+            g.fillPath(triangle);
+            return;
+        }
         if(button.getName()=="MIMETIKO_LCD") {
             // Pure luminous lettering: no OS-style button or extra border.
             auto r=button.getLocalBounds().reduced(3,0);
@@ -390,9 +409,11 @@ public:
         detailSkin=std::move(detail);
         for(const auto& spec:specs) addControl(spec);
         presetButton.setName("MIMETIKO_LCD");
-        makeHeaderButton(presetButton, "INITIAL SOUND", 608,79,367,29, [this]{showPresetMenu();});
-        makeHeaderButton(prevButton, "<", 535,76,40,35, [this]{processor.selectPrevPreset();syncPreset();});
-        makeHeaderButton(nextButton, ">", 981,76,39,35, [this]{processor.selectNextPreset();syncPreset();});
+        makeHeaderButton(presetButton, "INITIAL SOUND", 633,79,333,29, [this]{showPresetMenu();});
+        prevButton.setName("MIMETIKO_LCD_NAV_PREV");
+        nextButton.setName("MIMETIKO_LCD_NAV_NEXT");
+        makeHeaderButton(prevButton, "<", 589,75,36,38, [this]{processor.selectPrevPreset();syncPreset();});
+        makeHeaderButton(nextButton, ">", 976,75,36,38, [this]{processor.selectNextPreset();syncPreset();});
         makeHeaderButton(bankButton, "BANK", 1060,75,80,32, [this]{showBankMenu();});
         makeHeaderButton(loadButton, "LOAD", 1147,75,70,32, [this]{chooseFile(false);});
         makeHeaderButton(saveButton, "SAVE", 1223,75,70,32, [this]{chooseFile(true);});
