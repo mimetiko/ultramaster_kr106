@@ -1,4 +1,4 @@
-name: OpenSynth1 Modern UI Lab - Windows x64 VST3
+name: Mimetiko Synth 1 - Windows x64 VST3
 
 on:
   push:
@@ -58,14 +58,14 @@ jobs:
           Copy-Item opensynth1-src/README.md distribution/README-upstream.md
           Copy-Item opensynth1-src/soundbank distribution/soundbank -Recurse
           Compress-Archive -Path distribution/* -DestinationPath 'Mimetiko-Synth-1-Windows-x64-VST3.zip' -Force
-          if ((Get-Item 'OpenSynth1-Modern-UI-Lab-Windows-x64-VST3.zip').Length -lt 100000) {
+          if ((Get-Item 'Mimetiko-Synth-1-Windows-x64-VST3.zip').Length -lt 100000) {
             throw "Unexpectedly small ZIP"
           }
 
-      - name: Upload OpenSynth1 Windows VST3
+      - name: Upload Mimetiko Synth 1 Windows VST3
         uses: actions/upload-artifact@v4
         with:
           name: Mimetiko-Synth-1-Windows-x64-VST3
-          path: OpenSynth1-Modern-UI-Lab-Windows-x64-VST3.zip
+          path: Mimetiko-Synth-1-Windows-x64-VST3.zip
           if-no-files-found: error
           retention-days: 30
