@@ -1,8 +1,8 @@
-name: OpenSynth1 upstream - Windows x64 VST3
+name: OpenSynth1 Modern UI Lab - Windows x64 VST3
 
 on:
   push:
-    branches: [opensynth1-win64-build]
+    branches: [opensynth1-modern-ui]
     paths:
       - '.github/studio/opensynth1/**'
       - '.github/workflows/opensynth1-windows.yml'
@@ -29,6 +29,9 @@ jobs:
           Copy-Item .github/studio/opensynth1/CMakeLists.txt opensynth1-src/CMakeLists.txt
           Get-Content opensynth1-src/LICENSE | Select-Object -First 2
 
+      - name: Apply optional UI-only overlay
+        run: python .github/studio/opensynth1/apply_editor_overlay.py opensynth1-src
+
       - name: Fetch JUCE 9.0.1
         shell: pwsh
         run: |
@@ -54,15 +57,15 @@ jobs:
           Copy-Item opensynth1-src/LICENSE distribution/LICENSE-OpenSynth1.txt
           Copy-Item opensynth1-src/README.md distribution/README-upstream.md
           Copy-Item opensynth1-src/soundbank distribution/soundbank -Recurse
-          Compress-Archive -Path distribution/* -DestinationPath 'OpenSynth1-Windows-x64-VST3.zip' -Force
-          if ((Get-Item 'OpenSynth1-Windows-x64-VST3.zip').Length -lt 100000) {
+          Compress-Archive -Path distribution/* -DestinationPath 'OpenSynth1-Modern-UI-Lab-Windows-x64-VST3.zip' -Force
+          if ((Get-Item 'OpenSynth1-Modern-UI-Lab-Windows-x64-VST3.zip').Length -lt 100000) {
             throw "Unexpectedly small ZIP"
           }
 
       - name: Upload OpenSynth1 Windows VST3
         uses: actions/upload-artifact@v4
         with:
-          name: OpenSynth1-Windows-x64-VST3
-          path: OpenSynth1-Windows-x64-VST3.zip
+          name: OpenSynth1-Modern-UI-Lab-Windows-x64-VST3
+          path: OpenSynth1-Modern-UI-Lab-Windows-x64-VST3.zip
           if-no-files-found: error
           retention-days: 30
