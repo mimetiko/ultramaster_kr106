@@ -368,7 +368,6 @@ public:
         {juce::Graphics g(detail);drawChassis(g,true);}
         detailSkin=std::move(detail);
         for(const auto& spec:specs) addControl(spec);
-        for(auto& b:allButtons) {}
         makeHeaderButton(presetButton, "INITIAL SOUND", 608,79,367,29, [this]{showPresetMenu();});
         makeHeaderButton(prevButton, "<", 535,76,40,35, [this]{processor.selectPrevPreset();syncPreset();});
         makeHeaderButton(nextButton, ">", 981,76,39,35, [this]{processor.selectNextPreset();syncPreset();});
