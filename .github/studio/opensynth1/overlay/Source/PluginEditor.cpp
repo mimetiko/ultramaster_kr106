@@ -144,10 +144,14 @@ public:
         addAndMakeVisible(presetDisplay); addAndMakeVisible(bankButton);
         addAndMakeVisible(prevButton); addAndMakeVisible(nextButton);
         addAndMakeVisible(loadButton); addAndMakeVisible(saveButton); addAndMakeVisible(initButton);
+        addAndMakeVisible(sizeButton);
         prevButton.setButtonText("<");nextButton.setButtonText(">");
         bankButton.setButtonText("BANK");
         loadButton.setButtonText("LOAD .SY1");saveButton.setButtonText("SAVE .SY1");
         initButton.setButtonText("INIT");
+        sizeButton.setButtonText("SIZE 75%");
+        sizeButton.setTooltip("Change editor zoom (65% to 125%)");
+        sizeButton.onClick=[this]{showSizeMenu();};
         presetDisplay.setButtonText("001 / INITIAL SOUND");
         prevButton.onClick=[this]{processor.selectPrevPreset();syncPreset();};
         nextButton.onClick=[this]{processor.selectNextPreset();syncPreset();};
@@ -172,6 +176,7 @@ public:
         loadButton.setBounds(1233,25,110,44);
         saveButton.setBounds(1352,25,110,44);
         initButton.setBounds(1472,25,76,44);
+        sizeButton.setBounds(1583,22,153,37);
     }
     void paint(juce::Graphics& g) override {
         g.fillAll(charcoal);
@@ -189,7 +194,7 @@ public:
         g.setColour(juce::Colour(0xff64756d));g.drawRoundedRectangle(681.f,17.f,371.f,59.f,5,1);
         g.setColour(cream);
         g.setFont(juce::Font(juce::FontOptions(11.f)));
-        g.drawText("RIGHT CLICK A CONTROL TO MIDI LEARN",1550,25,216,25,juce::Justification::centred);
+        g.drawText("RIGHT CLICK: MIDI LEARN",1550,66,216,18,juce::Justification::centred);
         for(const auto& panel:panels) {
             auto r=juce::Rectangle<float>((float)panel.x,(float)panel.y,(float)panel.w,(float)panel.h);
             g.setColour(section);g.fillRoundedRectangle(r,6);
@@ -265,6 +270,23 @@ private:
         addAndMakeVisible(*label);
         labels.push_back(std::move(label));
     }
+    void showSizeMenu() {
+        const int scales[] = {65, 75, 85, 100, 125};
+        juce::PopupMenu menu;
+        for (int i=0;i<5;++i)
+            menu.addItem(i+1,juce::String(scales[i])+"%",true,scales[i]==currentScale);
+        auto safe=juce::Component::SafePointer<MimetikoSynthCanvas>(this);
+        menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&sizeButton),
+                           [safe](int n) {
+                               if (!safe || n<=0 || n>5) return;
+                               const int scales[]={65,75,85,100,125};
+                               safe->currentScale=scales[n-1];
+                               safe->sizeButton.setButtonText("SIZE "+juce::String(safe->currentScale)+"%");
+                               if (auto* editor=safe->getParentComponent())
+                                   editor->setSize(juce::roundToInt(W*safe->currentScale/100.f),
+                                                   juce::roundToInt(H*safe->currentScale/100.f));
+                           });
+    }
     void showBankMenu() {
         juce::PopupMenu menu;
         const auto& banks=processor.getBanks();
@@ -314,7 +336,8 @@ private:
     OpenSynth1AudioProcessor& processor;
     MimetikoLook look;
     std::vector<Panel> panels;
-    juce::TextButton presetDisplay,bankButton,prevButton,nextButton,loadButton,saveButton,initButton;
+    int currentScale=75;
+    juce::TextButton presetDisplay,bankButton,prevButton,nextButton,loadButton,saveButton,initButton,sizeButton;
     std::unique_ptr<juce::FileChooser> chooser;
     std::vector<std::unique_ptr<juce::Label>> labels;
     std::vector<std::unique_ptr<LearnSlider>> sliders;
@@ -329,9 +352,9 @@ OpenSynth1AudioProcessorEditor::OpenSynth1AudioProcessorEditor(OpenSynth1AudioPr
 : AudioProcessorEditor(&p),processor(p),canvas(std::make_unique<MimetikoSynthCanvas>(p)) {
     addAndMakeVisible(*canvas);
     setResizable(true,true);
-    setResizeLimits(1157,650,2400,1348);
+    setResizeLimits(1157,650,2225,1250);
     getConstrainer()->setFixedAspectRatio(double(W)/double(H));
-    setSize(W,H);
+    setSize(1335,750); // Comfortable 75% default; adjustable from the SIZE menu.
     startTimerHz(8);
 }
 OpenSynth1AudioProcessorEditor::~OpenSynth1AudioProcessorEditor() { stopTimer(); canvas.reset(); }
