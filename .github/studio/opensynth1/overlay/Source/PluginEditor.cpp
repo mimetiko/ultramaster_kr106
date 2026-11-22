@@ -497,9 +497,16 @@ private:
         for(int i=0;i<(int)banks.size();++i)
             m.addItem(i+1,juce::String::formatted("%02d  ",banks[i].bankNumber)+banks[i].name,
                       true,i==processor.getCurrentBankNumber());
+        m.addSeparator();
+        m.addItem(10000,"Select soundbank folder...");
         auto safe=juce::Component::SafePointer<MimetikoSynthCanvas>(this);
         m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&bankButton),
-          [safe](int n) {if(safe&&n>0) {safe->processor.selectBankAndProgram(n-1,1);safe->syncPreset();}});
+          [safe](int n) {
+              if(!safe||n<=0)return;
+              if(n==10000) {safe->chooseBankFolder();return;}
+              safe->processor.selectBankAndProgram(n-1,1);
+              safe->syncPreset();
+          });
     }
     void showPresetMenu() {
         const auto& banks=processor.getBanks();
@@ -512,6 +519,21 @@ private:
         auto safe=juce::Component::SafePointer<MimetikoSynthCanvas>(this);
         m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&presetButton),
           [safe,i](int n){if(safe&&n>0) {safe->processor.selectBankAndProgram(i,n);safe->syncPreset();}});
+    }
+    void chooseBankFolder() {
+        chooser=std::make_unique<juce::FileChooser>(
+           "Select OpenSynth1 soundbank folder",processor.getBankDirectory());
+        auto safe=juce::Component::SafePointer<MimetikoSynthCanvas>(this);
+        chooser->launchAsync(juce::FileBrowserComponent::openMode |
+                             juce::FileBrowserComponent::canSelectDirectories,
+            [safe](const juce::FileChooser& f) {
+                if(!safe)return;
+                const auto folder=f.getResult();
+                if(!folder.isDirectory())return;
+                safe->processor.setBankDirectory(folder);
+                safe->processor.selectBankAndProgram(0,1);
+                safe->syncPreset();
+            });
     }
     void chooseFile(bool save) {
         chooser=std::make_unique<juce::FileChooser>(
