@@ -308,6 +308,10 @@ public:
         g.setColour(Colour(0xff444446));g.drawLine(cx-capW*.43f,sliderPos,cx+capW*.43f,sliderPos,1.4f);
     }
     void drawButtonBackground(juce::Graphics& g,juce::Button& button,const Colour&,bool hovered,bool down) override {
+        // The preset LCD is already recessed into the background image.
+        // JUCE's standard button background placed a second grey, raised
+        // "window" inside the glass; leave it transparent instead.
+        if(button.getName()=="MIMETIKO_LCD") return;
         auto r=button.getLocalBounds().toFloat().reduced(1.f);
         g.setColour(Colour(0xff060709));g.fillRoundedRectangle(r.translated(0,2),4.f);
         const bool on=button.getToggleState();
@@ -316,6 +320,23 @@ public:
         g.fillRoundedRectangle(r,4.f);
         g.setColour(on?kRedBright:Colour(0xff77777a));g.drawRoundedRectangle(r,4.f,on?1.8f:1.f);
         if(down) {g.setColour(Colour(0xff090909).withAlpha(.2f));g.fillRoundedRectangle(r,4.f);}
+    }
+    void drawButtonText(juce::Graphics& g,juce::TextButton& button,
+                        bool shouldDrawButtonAsHighlighted,bool shouldDrawButtonAsDown) override {
+        if(button.getName()=="MIMETIKO_LCD") {
+            // Pure luminous lettering: no OS-style button or extra border.
+            auto r=button.getLocalBounds().reduced(3,0);
+            g.setColour(Colour(0xfff18e8b).withAlpha(.22f));
+            g.setFont(juce::Font(juce::FontOptions(19.f).withStyle("Bold")));
+            g.drawFittedText(button.getButtonText(),r.translated(0,1),
+                             juce::Justification::centred,1);
+            g.setColour(shouldDrawButtonAsDown?juce::Colours::white:
+                         shouldDrawButtonAsHighlighted?Colour(0xffffd5ce):Colour(0xffffbfb9));
+            g.drawFittedText(button.getButtonText(),r,juce::Justification::centred,1);
+            return;
+        }
+        juce::LookAndFeel_V4::drawButtonText(
+            g,button,shouldDrawButtonAsHighlighted,shouldDrawButtonAsDown);
     }
     void drawToggleButton(juce::Graphics& g,juce::ToggleButton& button,bool,bool) override {
         auto r=button.getLocalBounds().toFloat().reduced(1);
@@ -368,6 +389,7 @@ public:
         {juce::Graphics g(detail);drawChassis(g,true);}
         detailSkin=std::move(detail);
         for(const auto& spec:specs) addControl(spec);
+        presetButton.setName("MIMETIKO_LCD");
         makeHeaderButton(presetButton, "INITIAL SOUND", 608,79,367,29, [this]{showPresetMenu();});
         makeHeaderButton(prevButton, "<", 535,76,40,35, [this]{processor.selectPrevPreset();syncPreset();});
         makeHeaderButton(nextButton, ">", 981,76,39,35, [this]{processor.selectNextPreset();syncPreset();});
