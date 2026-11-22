@@ -94,5 +94,10 @@ change('''        g.fillRect(juce::Rectangle<float>(x,y,w,h));
         g.setColour(C::fromRGB(115,116,116));''','''        g.fillRect(juce::Rectangle<float>(x,y,w,h));
         patina(g,{x+2.f,y+2.f,w-4.f,h-4.f},uint32_t(x*19),84,0.09f);
         g.setColour(C::fromRGB(115,116,116));''')
+# Remove stray orange divider hidden behind the PERF page button.
+# It previously protruded beneath the button and served no functional purpose.
+change('''    g.setColour(C::fromRGB(222,111,56));
+    g.fillRect(1214,424,3,52);''', '')
+
 p.write_text(s,encoding="utf-8")
-print("Applied v4 satin faceplate + three-dimensional slider details")
+print("Applied v4 satin faceplate, tactile faders and removed stray PERF marker")
