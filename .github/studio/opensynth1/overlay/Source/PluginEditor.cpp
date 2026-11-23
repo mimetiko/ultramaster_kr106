@@ -147,22 +147,37 @@ void drawScrew(juce::Graphics& g,float x,float y,float r=7.f) {
     g.drawLine(x-r*.43f,y+r*.43f,x+r*.43f,y-r*.43f,1.5f);
 }
 void drawPanel(juce::Graphics& g, int x,int y,int w,int h,const char* title) {
-    g.setColour(Colour(0xff0a090b).withAlpha(.82f));
-    g.fillRoundedRectangle(float(x+3),float(y+5),float(w),float(h),9.f);
-    setMetalGradient(g,Colour(0xff454346),Colour(0xff18191c),float(x),float(y),float(h));
-    g.fillRoundedRectangle(float(x),float(y),float(w),float(h),9.f);
-    g.setColour(Colour(0xff090a0b));g.drawRoundedRectangle(float(x+2),float(y+2),float(w-4),float(h-4),8.f,2.0f);
-    g.setColour(Colour(0xff9d3139).withAlpha(.7f));
-    g.drawLine(float(x+17),float(y+32),float(x+w-17),float(y+32),1.2f);
+    // Flat charcoal faceplate sits directly on red aluminium.
+    const auto rect=juce::Rectangle<float>(float(x),float(y),float(w),float(h));
+    g.setColour(Colour(0xff222325));
+    g.fillRoundedRectangle(rect,7.f);
+    // Opaque fine-grain powder-coat material, clipped to the surface.
+    static const juce::Image panelGrain=juce::ImageCache::getFromMemory(
+        BinaryData::synth1_dark_panel_png,BinaryData::synth1_dark_panel_pngSize);
+    if(panelGrain.isValid()) {
+        g.saveState();
+        juce::Path shape;
+        shape.addRoundedRectangle(rect,7.f);
+        g.reduceClipRegion(shape);
+        for(int ty=y;ty<y+h;ty+=panelGrain.getHeight())
+            for(int tx=x;tx<x+w;tx+=panelGrain.getWidth())
+                g.drawImageAt(panelGrain,tx,ty);
+        g.restoreState();
+    }
+    // No faux extrusion, right/bottom shadow or bevel.
+    g.setColour(Colour(0xff111215));
+    g.drawRoundedRectangle(rect.reduced(.6f),7.f,1.0f);
+    g.setColour(Colour(0xff8b333b).withAlpha(.68f));
+    g.drawLine(float(x+17),float(y+32),float(x+w-17),float(y+32),1.f);
     g.setColour(kRedBright);
-    g.fillRoundedRectangle(float(x+16),float(y+13),3.5f,13.f,1.5f);
+    g.fillRoundedRectangle(float(x+14),float(y+13),3.2f,13.f,1.5f);
     g.setColour(kPale);
     g.setFont(juce::Font(juce::FontOptions(15.f).withStyle("Bold")));
-    g.drawText(title,x+29,y+7,w-65,23,juce::Justification::centredLeft);
-    drawScrew(g,float(x+10),float(y+11),4.1f);
-    drawScrew(g,float(x+w-12),float(y+11),4.1f);
-    drawScrew(g,float(x+10),float(y+h-11),4.1f);
-    drawScrew(g,float(x+w-12),float(y+h-11),4.1f);
+    g.drawText(title,x+26,y+7,w-60,23,juce::Justification::centredLeft);
+    drawScrew(g,float(x+9),float(y+10),4.0f);
+    drawScrew(g,float(x+w-11),float(y+10),4.0f);
+    drawScrew(g,float(x+9),float(y+h-10),4.0f);
+    drawScrew(g,float(x+w-11),float(y+h-10),4.0f);
 }
 void drawChassis(juce::Graphics& g,bool details) {
     g.fillAll(Colour(0xff101015));
@@ -201,7 +216,7 @@ void drawChassis(juce::Graphics& g,bool details) {
     g.drawLine(38.f,145.f,1603.f,145.f,2.f);
     g.setColour(Colour(0xff9d9ea0));
     g.setFont(juce::Font(juce::FontOptions(36.f).withStyle("Bold")));
-    g.drawText("Mimetiko Synth 1",79,64,460,50,juce::Justification::centredLeft);
+    g.drawText("Synth 1",79,64,460,50,juce::Justification::centredLeft);
     g.setColour(Colour(0xfff9cccc).withAlpha(.85f));
     g.drawLine(80.f,118.f,502.f,118.f,1.f);
     // ONE recessed LCD, shared by both navigation hit areas and the preset name.
@@ -246,7 +261,7 @@ void drawChassis(juce::Graphics& g,bool details) {
         drawPanel(g,527,163,484,305,"GLOBAL TUNING");
         drawPanel(g,1018,163,584,305,"VOICE / UNISON DETAIL");
         drawPanel(g,37,479,974,409,"MIDI ROUTING");
-        drawPanel(g,1018,479,584,409,"MIMETIKO / ABOUT");
+        drawPanel(g,1018,479,584,409,"SYNTH 1 / ABOUT");
         g.setColour(kPale);
         g.setFont(juce::Font(juce::FontOptions(19.f).withStyle("Bold")));
         g.drawText("Full synthesizer control, original OpenSynth1 DSP",1060,552,480,50,juce::Justification::centredLeft);
@@ -605,7 +620,7 @@ private:
     }
     void chooseFile(bool save) {
         chooser=std::make_unique<juce::FileChooser>(
-           save?"Save Mimetiko Synth 1 preset":"Load Mimetiko Synth 1 preset",
+           save?"Save Synth 1 preset":"Load Synth 1 preset",
            processor.getBankDirectory(),"*.sy1");
         auto safe=juce::Component::SafePointer<MimetikoSynthCanvas>(this);
         chooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
