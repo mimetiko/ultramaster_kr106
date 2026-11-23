@@ -6,11 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../JUCE" "${CMAKE_BINARY_DIR}/JUCE")
 
 juce_add_plugin(OpenSynth1
-    COMPANY_NAME "Mimetiko"
+    COMPANY_NAME "mimetiko"
     BUNDLE_ID "org.mimetiko.Synth1"
     PLUGIN_MANUFACTURER_CODE Mmtk
     PLUGIN_CODE MtS1
-    PRODUCT_NAME "Mimetiko Synth 1"
+    PRODUCT_NAME "Synth 1"
     VERSION "1.2.1"
     FORMATS VST3 Standalone
     IS_SYNTH TRUE
@@ -28,6 +28,7 @@ juce_add_binary_data(Synth1PhysicalSkin SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../synth1-skin/synth1_knob.png
     ${CMAKE_CURRENT_SOURCE_DIR}/../synth1-skin/synth1_fader.png
     ${CMAKE_CURRENT_SOURCE_DIR}/../synth1-skin/synth1_grain.png
+    ${CMAKE_CURRENT_SOURCE_DIR}/../synth1-skin/synth1_dark_panel.png
 )
 
 target_sources(OpenSynth1 PRIVATE
