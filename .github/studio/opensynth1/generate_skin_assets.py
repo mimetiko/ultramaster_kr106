@@ -31,57 +31,53 @@ def hash2(x: int,y: int,salt: int=0) -> float:
     return ((n^(n>>16))&65535)/32767.5-1
 
 def knob(x: int,y: int) -> tuple[int,int,int,int]:
-    # Dark, lathe-machined aluminium with a stepped outer rim.
-    # The white pointer is painted live in JUCE, never baked in.
-    u,v=x-128.0,y-126.0
+    # Machined graphite-anodised aluminium. JUCE draws the moving pointer
+    # separately so this raster body stays perfectly stable while turning.
+    u,v=x-128.0,y-123.0
     r=math.hypot(u,v)
     a=math.atan2(v,u)
-    if r>=125: return (0,0,0,0)
-    if r>111:
-        shadow_r=math.hypot(u-2.8,v-4.0)
-        alpha=clamp(170*max(0.0,(125-shadow_r)/13.0))
-        return (1,1,2,alpha)
-    grain=hash2(x,y,11)
-    lx=(-.50*u-.83*v)/(r+.001)
-    light=.48+.28*lx
-    brushed=2.1*hash2(x//2,y,17)+1.4*hash2(x,y,31)
-    if r>=106:
-        metal=31+58*light+48*math.exp(-((r-108.2)/1.2)**2)+brushed
-    elif r>=95:
-        grooves=6*math.cos(114*a)+3*math.cos(226*a+.8)
-        metal=24+52*light+grooves+brushed
-        if r<97: metal+=13
-    elif r>=89:
-        metal=18+32*light+39*math.exp(-((r-90.1)/1.6)**2)+brushed
+    if r>=126: return (0,0,0,0)
+    if r>=112:
+        shadow_r=math.hypot(u-3,v-5)
+        return (0,0,0,clamp(165*max(0,1-(shadow_r-112)/14)))
+    light=max(-1,min(1,(-.63*u-.77*v)/(r+.001)))
+    fleck=hash2(x,y,31)*2.3+hash2(x//2,y,9)*1.5
+    spec=51*math.exp(-((a+2.22)/.17)**2)
+    if r>=108:
+        n=18+76*max(0,(112-r)/4)+spec+fleck
+    elif r>=99:
+        ribs=10*math.sin(a*100)+6*math.cos(a*165)
+        n=20+44*(.52+.48*light)+ribs+fleck
+    elif r>=91:
+        n=17+52*(.5+.5*light)+30*math.exp(-((r-96)/1.8)**2)+fleck
+    elif r>=84:
+        n=34+63*(.5+.5*light)+47*math.exp(-((r-86.1)/2.0)**2)+fleck
     else:
-        # Circular machining grooves and diffuse softbox reflections.
-        turning=2.4*math.sin(r*2.7)+1.0*math.sin(r*8.7)
-        softbox=33*math.exp(-((u+34)**2/2900+(v+40)**2/1600))
-        secondary=13*math.exp(-((u-34)**2/900+(v+28)**2/650))
-        chamfer=14*math.exp(-((r-84.5)/4.5)**2)
-        metal=26+46*light+softbox+secondary+chamfer+turning+brushed
-    n=clamp(metal+grain*1.2)
-    return (n,clamp(n+1),clamp(n+3),255)
+        broad=80*math.exp(-((u+34)/27)**2)*math.exp(-((v+16)/65)**2)
+        top=35*math.exp(-((v+49)/18)**2)
+        right=16*math.exp(-((u-33)/16)**2)*math.exp(-((v+33)/25)**2)
+        turn=3.9*math.sin(r*2.4)+1.8*math.cos(r*6.3)
+        n=34+27*(.5+.5*light)+broad+top+right+turn+fleck
+    n=clamp(n)
+    return (n,clamp(n+2),clamp(n+5),255)
 
 def fader(x: int,y: int) -> tuple[int,int,int,int]:
-    # Solid machined metal cap, fully opaque apart from its outer shadow.
+    # A three-dimensional opaque aluminium fader handle. Only the external
+    # cast shadow has alpha; the entire physical body is RGBA alpha=255.
     u,v=x-100.0,y-52.0
     ax,ay=abs(u),abs(v)
-    if ax>=98 or ay>=49: return (0,0,0,0)
-    if ax>90 or ay>38:
-        fade=max((ax-90)/8,(ay-38)/11)
-        return (0,0,0,clamp(168*(1-fade)))
-    d=min(90-ax,38-ay)
-    light=.35+.4*(-v/38)+.09*(-u/90)
-    edge=57*math.exp(-d/3.1)
-    top=22*math.exp(-((v+30)/7)**2)
-    softbox=30*math.exp(-((u+41)/36)**2-((v+18)/20)**2)
-    brushed=4.3*hash2(x,y,10)+2.0*math.sin(y*1.5)
-    metal=58+44*light+edge+top+softbox+brushed
-    if abs(v)<3 and ax<78: metal*=.43
-    if 7<abs(v)<28 and int(ax)%13<1: metal+=8
+    if ax>=100 or ay>=52:return (0,0,0,0)
+    if ax>94 or ay>43:
+        t=max((ax-94)/6,(ay-43)/9)
+        return (0,0,0,clamp(200*(1-t)))
+    d=min(94-ax,43-ay)
+    top=50*math.exp(-((v+35)/8)**2)
+    bottom=-36*math.exp(-((v-33)/8)**2)
+    metal=73+42*(-v/43)+30*math.exp(-d/3.5)+top+bottom+10*hash2(x,y,34)
+    if abs(v)<3: metal=48+4*hash2(x,y)
+    if 10<abs(v)<32 and int(ax)%10<1: metal+=12
     n=clamp(metal)
-    return (n,clamp(n+1),clamp(n+3),255)
+    return (n,clamp(n+1),clamp(n+4),255)
 
 def dark_panel(x: int,y: int) -> tuple[int,int,int,int]:
     # Fine-grain charcoal powder coat, with no embossed panel-edge lighting.
