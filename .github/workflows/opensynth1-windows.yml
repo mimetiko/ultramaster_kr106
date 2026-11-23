@@ -1,4 +1,4 @@
-name: Mimetiko Synth 1 - Windows x64 VST3
+name: Synth 1 by mimetiko - Windows x64 VST3
 
 on:
   push:
@@ -49,8 +49,8 @@ jobs:
       - name: Package VST3 and upstream license
         shell: pwsh
         run: |
-          $bundle = 'opensynth1-build/OpenSynth1_artefacts/Release/VST3/Mimetiko Synth 1.vst3'
-          $bin = Join-Path $bundle 'Contents/x86_64-win/Mimetiko Synth 1.vst3'
+          $bundle = 'opensynth1-build/OpenSynth1_artefacts/Release/VST3/Synth 1.vst3'
+          $bin = Join-Path $bundle 'Contents/x86_64-win/Synth 1.vst3'
           if (-not (Test-Path $bin -PathType Leaf)) {
             Get-ChildItem opensynth1-build -Recurse -File -Filter *.vst3 | Select-Object FullName,Length
             throw "VST3 binary not found: $bin"
