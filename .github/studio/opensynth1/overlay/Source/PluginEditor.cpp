@@ -292,7 +292,7 @@ public:
     void drawRotarySlider(juce::Graphics& g,int x,int y,int width,int height,float pos,float start,float end,juce::Slider&) override {
         // Real shaded 256px metallic cap, scaled to each control's original hitbox.
         // JUCE keeps all APVTS attachments / mouse interaction and adds moving dial marks.
-        const float size=std::min(width,height)*.83f;
+        const float size=std::min(width,height)*.92f;
         const float cx=x+width*.5f, cy=y+height*.5f;
         const float radius=size*.40f;
         if(knobSkin.isValid())
@@ -341,15 +341,25 @@ public:
         // The control uses a real raster cap, translated at each parameter value.
         const float capW=std::min(44.f,float(width)-3.f);
         const float capH=capW*.54f;
+        // Opaque raised backing physically hides the entire rail behind the cap.
+        // The raster only provides metal shading; no part of the rail may show through.
+        const auto cap=juce::Rectangle<float>(cx-capW*.5f,sliderPos-capH*.5f,capW,capH);
+        g.setColour(Colour(0xff101115));
+        g.fillRoundedRectangle(cap.expanded(1.1f).translated(1.f,1.8f),2.5f);
+        g.setColour(Colour(0xff5c5e61));
+        g.fillRoundedRectangle(cap,1.7f);
         if(faderSkin.isValid())
             g.drawImageWithin(faderSkin,juce::roundToInt(cx-capW*.5f),
                               juce::roundToInt(sliderPos-capH*.5f),
                               juce::roundToInt(capW),juce::roundToInt(capH),
                               juce::RectanglePlacement::stretchToFit);
-        else {
-            g.setColour(Colour(0xffa3a3a7));
-            g.fillRoundedRectangle(cx-capW*.5f,sliderPos-capH*.5f,capW,capH,3.f);
-        }
+        // Machined perimeter and a nontransparent central grip groove.
+        g.setColour(Colour(0xffb6b8ba).withAlpha(.86f));
+        g.drawLine(cap.getX()+2.f,cap.getY()+2.5f,cap.getRight()-2.f,cap.getY()+2.5f,.9f);
+        g.setColour(Colour(0xff18191d));
+        g.drawLine(cap.getX()+2.f,sliderPos,cap.getRight()-2.f,sliderPos,1.f);
+        g.setColour(Colour(0xff44474a));
+        g.drawRoundedRectangle(cap,1.7f,.8f);
     }
     void drawButtonBackground(juce::Graphics& g,juce::Button& button,const Colour&,bool hovered,bool down) override {
         // The preset LCD is already recessed into the background image.
